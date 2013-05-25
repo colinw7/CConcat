@@ -1,16 +1,15 @@
 #ifndef CCONCAT_H
 #define CCONCAT_H
 
-class CConcat {
- private:
-  string         id_;
-  vector<string> files_;
-  uint           check_pos_;
+#include <sys/types.h>
+#include <string>
+#include <vector>
 
+class CConcat {
  public:
   CConcat();
 
-  void addFile(const string &fileName) {
+  void addFile(const std::string &fileName) {
     files_.push_back(fileName);
   }
 
@@ -21,7 +20,12 @@ class CConcat {
  private:
   bool check_match(int c);
 
-  static const string &getDefId();
+  static const std::string &getDefId();
+
+ private:
+  std::string              id_;
+  std::vector<std::string> files_;
+  uint                     check_pos_;
 };
 
 #endif

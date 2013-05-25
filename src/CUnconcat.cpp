@@ -1,5 +1,14 @@
-#include <std_c++.h>
 #include "CUnconcat.h"
+
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <iostream>
+
+using std::string;
+using std::cout;
+using std::cerr;
+using std::endl;
 
 int
 main(int argc, char **argv)

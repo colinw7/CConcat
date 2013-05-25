@@ -1,19 +1,14 @@
 #ifndef CUNCONCAT_H
 #define CUNCONCAT_H
 
-class CUnconcat {
- private:
-  char   id_[256];
-  string filename_;
-  uint   bytes_written_;
-  string check_buffer_;
-  uint   check_pos_;
-  bool   tabulate_;
+#include <sys/types.h>
+#include <string>
 
+class CUnconcat {
  public:
   CUnconcat();
 
-  void setFileName(const string &filename) { filename_ = filename; }
+  void setFileName(const std::string &filename) { filename_ = filename; }
 
   void setTabulate(bool tabulate) { tabulate_ = tabulate; }
 
@@ -21,7 +16,15 @@ class CUnconcat {
 
   bool check_match(FILE *fp, int c);
 
-  const string &getDefId();
+  const std::string &getDefId();
+
+ private:
+  char        id_[256];
+  std::string filename_;
+  uint        bytes_written_;
+  std::string check_buffer_;
+  uint        check_pos_;
+  bool        tabulate_;
 };
 
 #endif

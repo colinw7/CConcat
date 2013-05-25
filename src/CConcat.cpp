@@ -1,5 +1,12 @@
-#include <std_c++.h>
 #include "CConcat.h"
+
+#include <iostream>
+#include <cstdio>
+#include <cstdlib>
+
+using std::string;
+using std::cerr;
+using std::endl;
 
 int
 main(int argc, char **argv)

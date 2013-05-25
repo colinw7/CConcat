@@ -1,27 +1,38 @@
-.SILENT:
+CC = g++
+AR = ar
+RM = rm
 
-BIN_DIR = .
+CDEBUG = -g
+LDEBUG = -g
 
-CFLAGS = -g -I$(INC_DIR)
-LFLAGS = -g -L$(LIB_DIR)
-
-.cpp.o:
-	echo "Compiling $<"
-	g++ -c $(CFLAGS) $<
+INC_DIR = ../include
+OBJ_DIR = ../obj
+LIB_DIR = ../lib
+BIN_DIR = ../bin
 
 all: $(BIN_DIR)/CConcat $(BIN_DIR)/CUnconcat
 
-CConcat.o: CConcat.cpp
+SRC1 = CConcat.cpp
+SRC2 = CUnconcat.cpp
 
-$(BIN_DIR)/CConcat: CConcat.o
-	echo "Linking CConcat"
-	g++ -o $(BIN_DIR)/CConcat $(LFLAGS) CConcat.o
+OBJ1 = $(patsubst %.cpp,$(OBJ_DIR)/%.o,$(SRC1))
+OBJ2 = $(patsubst %.cpp,$(OBJ_DIR)/%.o,$(SRC2))
 
-CUnconcat.o: CUnconcat.cpp
+CFLAGS = -I$(INC_DIR) -I.
+LFLAGS = -L$(LIB_DIR)
 
-$(BIN_DIR)/CUnconcat: CUnconcat.o
-	echo "Linking CUnconcat"
-	g++ -o $(BIN_DIR)/CUnconcat $(LFLAGS) CUnconcat.o
+$(OBJ1): $(OBJ_DIR)/%.o: %.cpp
+	$(CC) -c $< -o $(OBJ_DIR)/$*.o $(CPPFLAGS)
+
+$(OBJ2): $(OBJ_DIR)/%.o: %.cpp
+	$(CC) -c $< -o $(OBJ_DIR)/$*.o $(CPPFLAGS)
+
+$(BIN_DIR)/CConcat: $(OBJ_DIR)/CConcat.o
+	g++ -o $(BIN_DIR)/CConcat $(LFLAGS) $(OBJ_DIR)/CConcat.o
+
+$(BIN_DIR)/CUnconcat: $(OBJ_DIR)/CUnconcat.o
+	g++ -o $(BIN_DIR)/CUnconcat $(LFLAGS) $(OBJ_DIR)/CUnconcat.o
 
 clean:
-	rm -f $(BIN_DIR)/CConcat $(BIN_DIR)/CUnconcat *.o
+	$(RM) -f $(OBJ_DIR)/*.o
+	$(RM) -f $(BIN_DIR)/CConcat $(BIN_DIR)/CUnconcat
