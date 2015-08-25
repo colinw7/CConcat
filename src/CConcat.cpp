@@ -1,5 +1,4 @@
-#include "CConcat.h"
-
+#include <CConcat.h>
 #include <iostream>
 #include <cstdio>
 #include <cstdlib>

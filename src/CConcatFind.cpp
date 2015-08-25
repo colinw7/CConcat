@@ -1,4 +1,4 @@
-#include <CUnconcat.h>
+#include <CConcatFind.h>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -13,22 +13,26 @@ int
 main(int argc, char **argv)
 {
   string filename;
-  bool   tabulate = false;
+  string pattern;
+  bool   list = false;
 
   for (int i = 1; i < argc; i++) {
     if (argv[i][0] == '-') {
-      if (argv[i][1] == 't')
-        tabulate = true;
+      if (argv[i][1] == 'L')
+        list = true;
       else
         cerr << "Invalid option " << argv[i] << endl;
     }
     else {
-      if (filename != "") {
+      if      (filename == "")
+        filename = argv[i];
+      else if (pattern == "")
+        pattern = argv[i];
+      else {
         cerr << "Usage - " << argv[0] << " <file>" << endl;
         exit(1);
       }
 
-      filename = argv[i];
     }
   }
 
@@ -37,10 +41,11 @@ main(int argc, char **argv)
     exit(1);
   }
 
-  CUnconcat unconcat;
+  CConcatFind unconcat;
 
   unconcat.setFileName(filename);
-  unconcat.setTabulate(tabulate);
+  unconcat.setPattern (pattern);
+  unconcat.setList    (list);
 
   if (! unconcat.exec())
     exit(1);
@@ -48,15 +53,15 @@ main(int argc, char **argv)
   return 0;
 }
 
-CUnconcat::
-CUnconcat() :
- tabulate_(false), check_pos_(0)
+CConcatFind::
+CConcatFind() :
+ list_(false), check_pos_(0)
 {
   memset(id_, 0, sizeof(id_));
 }
 
 bool
-CUnconcat::
+CConcatFind::
 exec()
 {
   FILE *fp = fopen(filename_.c_str(), "rb");
@@ -107,12 +112,12 @@ exec()
   }
 
   while (true) {
-    string output_file;
+    current_file_ = "";
 
     c = fgetc(fp);
 
     while (c != '\n' && c != EOF) {
-      output_file += char(c);
+      current_file_ += char(c);
 
       c = fgetc(fp);
     }
@@ -122,37 +127,32 @@ exec()
       exit(1);
     }
 
+    string line;
+    bool   found = false;
+
     bytes_written_ = 0;
 
-    FILE *fp1 = NULL;
-
-    if (tabulate_)
-      cout << output_file;
-    else {
-      if (filename_ == output_file) {
-        cerr << "Input and Output File are the same" << endl;
-        exit(1);
-      }
-
-      fp1 = fopen(output_file.c_str(), "w");
-
-      if (fp1 == NULL) {
-        cerr << "Can't Open Output File " << output_file << endl;
-        exit(1);
-      }
-    }
-
-    while ((c = fgetc(fp)) != EOF)
-      if (check_match(fp1, c))
+    while ((c = fgetc(fp)) != EOF) {
+      if (check_match(c))
         break;
 
-    check_match(fp1, EOF);
+      if (c == '\n') {
+        if (! found) {
+          bool found1 = check_line(line);
 
-    if (fp1 != NULL)
-      fclose(fp1);
+          if (list_ && found1) {
+            std::cerr << current_file_ << std::endl;
+            found = true;
+          }
+        }
 
-    if (tabulate_)
-      cout << " " << bytes_written_ << " bytes" << endl;
+        line = "";
+      }
+      else
+        line += c;
+    }
+
+    check_match(EOF);
 
     if (c == EOF)
       break;
@@ -164,20 +164,25 @@ exec()
 }
 
 bool
-CUnconcat::
-check_match(FILE *fp, int c)
+CConcatFind::
+check_line(const string &line) const
+{
+  string::size_type p = line.find(pattern_);
+
+  if (p == string::npos)
+    return false;
+
+  if (! list_)
+    std::cerr << current_file_ << ": " << line << std::endl;
+
+  return true;
+}
+
+bool
+CConcatFind::
+check_match(int c)
 {
   if (c != id_[check_pos_]) {
-    if (fp != NULL) {
-      uint len1 = check_buffer_.size();
-
-      for (uint i = 0; i < check_pos_; i++)
-        fputc(check_buffer_[i], fp);
-
-      if (c != EOF)
-        fputc(c, fp);
-    }
-
     bytes_written_ += check_pos_;
 
     if (c != EOF)
@@ -205,7 +210,7 @@ check_match(FILE *fp, int c)
 }
 
 const string &
-CUnconcat::
+CConcatFind::
 getDefId()
 {
   static string id = "##concat##";
