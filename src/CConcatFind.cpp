@@ -4,24 +4,22 @@
 #include <cstring>
 #include <iostream>
 
-using std::string;
-using std::cout;
-using std::cerr;
-using std::endl;
-
 int
 main(int argc, char **argv)
 {
-  string filename;
-  string pattern;
-  bool   list = false;
+  std::string filename;
+  std::string pattern;
+  bool        list = false;
+  bool        number = false;
 
   for (int i = 1; i < argc; i++) {
     if (argv[i][0] == '-') {
-      if (argv[i][1] == 'L')
+      if      (argv[i][1] == 'L')
         list = true;
+      else if (argv[i][1] == 'n')
+        number = true;
       else
-        cerr << "Invalid option " << argv[i] << endl;
+        std::cerr << "Invalid option " << argv[i] << std::endl;
     }
     else {
       if      (filename == "")
@@ -29,7 +27,7 @@ main(int argc, char **argv)
       else if (pattern == "")
         pattern = argv[i];
       else {
-        cerr << "Usage - " << argv[0] << " <file>" << endl;
+        std::cerr << "Usage - " << argv[0] << " <file>" << std::endl;
         exit(1);
       }
 
@@ -46,6 +44,7 @@ main(int argc, char **argv)
   unconcat.setFileName(filename);
   unconcat.setPattern (pattern);
   unconcat.setList    (list);
+  unconcat.setNumber  (number);
 
   if (! unconcat.exec())
     exit(1);
@@ -55,9 +54,8 @@ main(int argc, char **argv)
 
 CConcatFind::
 CConcatFind() :
- list_(false), check_pos_(0)
+ list_(false), number_(false), current_line_(1)
 {
-  memset(id_, 0, sizeof(id_));
 }
 
 bool
@@ -67,7 +65,7 @@ exec()
   FILE *fp = fopen(filename_.c_str(), "rb");
 
   if (fp == NULL) {
-    cerr << "Can't Open Input File " << filename_ << endl;
+    std::cerr << "Can't Open Input File " << filename_ << std::endl;
     return false;
   }
 
@@ -76,45 +74,26 @@ exec()
   int no = fread(buffer, 1, 10, fp);
 
   if (no != 10 || strncmp(buffer, "CONCAT_ID=", 10) != 0) {
-    cerr << "Invalid Concat File " << filename_ << endl;
+    std::cerr << "Invalid Concat File " << filename_ << std::endl;
     exit(1);
   }
 
-  int i = 0;
-
-  int c = fgetc(fp);
-
-  while (c != '\n' && c != EOF) {
-    id_[i++] = c;
-
-    c = fgetc(fp);
-  }
-
-  id_[i] = '\0';
-
-  if (c == EOF) {
-    cerr << "Invalid Concat File " << filename_ << endl;
+  if (! readId(fp))
     exit(1);
-  }
 
-  int len = strlen(id_);
-
-  if (len == 0) {
-    fprintf(stderr, "Null Concat Id\n");
-    exit(1);
-  }
+  uint len = id_.size();
 
   no = fread(buffer, 1, len, fp);
 
-  if (no != len || strncmp(buffer, id_, len) != 0) {
-    cerr << "Invalid Concat File " << filename_ << endl;
+  if (no != len || strncmp(buffer, id_.c_str(), len) != 0) {
+    std::cerr << "Invalid Concat File " << filename_ << std::endl;
     exit(1);
   }
 
   while (true) {
     current_file_ = "";
 
-    c = fgetc(fp);
+    int c = fgetc(fp);
 
     while (c != '\n' && c != EOF) {
       current_file_ += char(c);
@@ -122,13 +101,15 @@ exec()
       c = fgetc(fp);
     }
 
-    if (c == EOF) {
-      cerr << "Invalid Concat File " << filename_ << endl;
+    if (c != '\n') {
+      std::cerr << "Invalid Concat File " << filename_ << std::endl;
       exit(1);
     }
 
-    string line;
-    bool   found = false;
+    current_line_ = 1;
+
+    std::string line;
+    bool        found = false;
 
     bytes_written_ = 0;
 
@@ -141,12 +122,14 @@ exec()
           bool found1 = check_line(line);
 
           if (list_ && found1) {
-            std::cerr << current_file_ << std::endl;
+            std::cout << current_file_ << std::endl;
             found = true;
           }
         }
 
         line = "";
+
+        ++current_line_;
       }
       else
         line += c;
@@ -165,15 +148,19 @@ exec()
 
 bool
 CConcatFind::
-check_line(const string &line) const
+check_line(const std::string &line) const
 {
-  string::size_type p = line.find(pattern_);
+  std::string::size_type p = line.find(pattern_);
 
-  if (p == string::npos)
+  if (p == std::string::npos)
     return false;
 
-  if (! list_)
-    std::cerr << current_file_ << ": " << line << std::endl;
+  if (! list_) {
+    if (number_)
+      std::cout << current_file_ << ":" << current_line_ << ": " << line << std::endl;
+    else
+      std::cout << current_file_ << ": " << line << std::endl;
+  }
 
   return true;
 }
@@ -198,7 +185,7 @@ check_match(int c)
 
   ++check_pos_;
 
-  uint len = strlen(id_);
+  uint len = id_.size();
 
   if (check_pos_ >= len) {
     check_pos_ = 0;
@@ -207,13 +194,4 @@ check_match(int c)
   }
 
   return false;
-}
-
-const string &
-CConcatFind::
-getDefId()
-{
-  static string id = "##concat##";
-
-  return id;
 }

@@ -3,10 +3,6 @@
 #include <cstdio>
 #include <cstdlib>
 
-using std::string;
-using std::cerr;
-using std::endl;
-
 int
 main(int argc, char **argv)
 {
@@ -14,13 +10,13 @@ main(int argc, char **argv)
 
   for (int i = 1; i < argc; i++) {
     if (argv[i][0] == '-')
-      cerr << "Invalid option " << argv[i] << endl;
+      std::cerr << "Invalid option " << argv[i] << std::endl;
     else
       concat.addFile(argv[i]);
   }
 
   if (concat.getNumFiles() <= 1) {
-    cerr << "Usage - " << argv[0] << " <file1> <file2> ..." << endl;
+    std::cerr << "Usage - " << argv[0] << " <file1> <file2> ..." << std::endl;
     exit(1);
   }
 
@@ -31,8 +27,7 @@ main(int argc, char **argv)
 }
 
 CConcat::
-CConcat() :
- check_pos_(0)
+CConcat()
 {
   char *env = getenv("CONCAT_ID");
 
@@ -54,8 +49,8 @@ exec()
   for (uint i = 0; i < num_files; ++i) {
     FILE *fp = fopen(files_[i].c_str(), "rb");
 
-    if (fp == NULL) {
-      cerr << "Can't Open Input File " << files_[i] << endl;
+    if (! fp) {
+      std::cerr << "Can't Open Input File " << files_[i] << std::endl;
       continue;
     }
 
@@ -65,7 +60,7 @@ exec()
 
     while ((c = fgetc(fp)) != EOF) {
       if (check_match(c)) {
-        cerr << "Concat Id found in input file " << files_[i] << endl;
+        std::cerr << "Concat Id found in input file " << files_[i] << std::endl;
         fclose(fp);
         return false;
       }
@@ -83,8 +78,6 @@ bool
 CConcat::
 check_match(int c)
 {
-  uint len = id_.size();
-
   if (c != id_[check_pos_]) {
     check_pos_ = 0;
     return false;
@@ -92,14 +85,7 @@ check_match(int c)
 
   ++check_pos_;
 
+  uint len = id_.size();
+
   return (check_pos_ >= len);
-}
-
-const string &
-CConcat::
-getDefId()
-{
-  static string id = "##concat##";
-
-  return id;
 }

@@ -1,11 +1,10 @@
 #ifndef CCONCAT_H
 #define CCONCAT_H
 
-#include <sys/types.h>
-#include <string>
+#include <CConcatBase.h>
 #include <vector>
 
-class CConcat {
+class CConcat : public CConcatBase {
  public:
   CConcat();
 
@@ -20,12 +19,8 @@ class CConcat {
  private:
   bool check_match(int c);
 
-  static const std::string &getDefId();
-
  private:
-  std::string              id_;
   std::vector<std::string> files_;
-  uint                     check_pos_;
 };
 
 #endif

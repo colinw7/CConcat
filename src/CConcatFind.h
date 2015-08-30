@@ -1,17 +1,16 @@
 #ifndef CCONCAT_FIND_H
 #define CCONCAT_FIND_H
 
-#include <sys/types.h>
-#include <string>
+#include <CConcatBase.h>
 
-class CConcatFind {
+class CConcatFind : public CConcatBase {
  public:
   CConcatFind();
 
-  void setFileName(const std::string &filename) { filename_ = filename; }
-  void setPattern (const std::string &pattern ) { pattern_  = pattern ; }
+  void setPattern(const std::string &pattern) { pattern_ = pattern; }
 
-  void setList(bool list) { list_ = list; }
+  void setList  (bool list  ) { list_   = list  ; }
+  void setNumber(bool number) { number_ = number; }
 
   bool exec();
 
@@ -19,17 +18,14 @@ class CConcatFind {
 
   bool check_line(const std::string &line) const;
 
-  const std::string &getDefId();
-
  private:
-  char        id_[256];
-  std::string filename_;
   std::string pattern_;
   uint        bytes_written_;
   std::string check_buffer_;
-  uint        check_pos_;
   bool        list_;
+  bool        number_;
   std::string current_file_;
+  int         current_line_;
 };
 
 #endif

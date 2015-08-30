@@ -4,27 +4,22 @@
 #include <cstring>
 #include <iostream>
 
-using std::string;
-using std::cout;
-using std::cerr;
-using std::endl;
-
 int
 main(int argc, char **argv)
 {
-  string filename;
-  bool   tabulate = false;
+  std::string filename;
+  bool        tabulate = false;
 
   for (int i = 1; i < argc; i++) {
     if (argv[i][0] == '-') {
       if (argv[i][1] == 't')
         tabulate = true;
       else
-        cerr << "Invalid option " << argv[i] << endl;
+        std::cerr << "Invalid option " << argv[i] << std::endl;
     }
     else {
       if (filename != "") {
-        cerr << "Usage - " << argv[0] << " <file>" << endl;
+        std::cerr << "Usage - " << argv[0] << " <file>" << std::endl;
         exit(1);
       }
 
@@ -50,9 +45,8 @@ main(int argc, char **argv)
 
 CUnconcat::
 CUnconcat() :
- tabulate_(false), check_pos_(0)
+ tabulate_(false)
 {
-  memset(id_, 0, sizeof(id_));
 }
 
 bool
@@ -62,7 +56,7 @@ exec()
   FILE *fp = fopen(filename_.c_str(), "rb");
 
   if (fp == NULL) {
-    cerr << "Can't Open Input File " << filename_ << endl;
+    std::cerr << "Can't Open Input File " << filename_ << std::endl;
     return false;
   }
 
@@ -71,45 +65,26 @@ exec()
   int no = fread(buffer, 1, 10, fp);
 
   if (no != 10 || strncmp(buffer, "CONCAT_ID=", 10) != 0) {
-    cerr << "Invalid Concat File " << filename_ << endl;
+    std::cerr << "Invalid Concat File " << filename_ << std::endl;
     exit(1);
   }
 
-  int i = 0;
-
-  int c = fgetc(fp);
-
-  while (c != '\n' && c != EOF) {
-    id_[i++] = c;
-
-    c = fgetc(fp);
-  }
-
-  id_[i] = '\0';
-
-  if (c == EOF) {
-    cerr << "Invalid Concat File " << filename_ << endl;
+  if (! readId(fp))
     exit(1);
-  }
 
-  int len = strlen(id_);
-
-  if (len == 0) {
-    fprintf(stderr, "Null Concat Id\n");
-    exit(1);
-  }
+  uint len = id_.size();
 
   no = fread(buffer, 1, len, fp);
 
-  if (no != len || strncmp(buffer, id_, len) != 0) {
-    cerr << "Invalid Concat File " << filename_ << endl;
+  if (no != len || strncmp(buffer, id_.c_str(), len) != 0) {
+    std::cerr << "Invalid Concat File " << filename_ << std::endl;
     exit(1);
   }
 
   while (true) {
-    string output_file;
+    std::string output_file;
 
-    c = fgetc(fp);
+    int c = fgetc(fp);
 
     while (c != '\n' && c != EOF) {
       output_file += char(c);
@@ -118,7 +93,7 @@ exec()
     }
 
     if (c == EOF) {
-      cerr << "Invalid Concat File " << filename_ << endl;
+      std::cerr << "Invalid Concat File " << filename_ << std::endl;
       exit(1);
     }
 
@@ -127,17 +102,17 @@ exec()
     FILE *fp1 = NULL;
 
     if (tabulate_)
-      cout << output_file;
+      std::cout << output_file;
     else {
       if (filename_ == output_file) {
-        cerr << "Input and Output File are the same" << endl;
+        std::cerr << "Input and Output File are the same" << std::endl;
         exit(1);
       }
 
       fp1 = fopen(output_file.c_str(), "w");
 
       if (fp1 == NULL) {
-        cerr << "Can't Open Output File " << output_file << endl;
+        std::cerr << "Can't Open Output File " << output_file << std::endl;
         exit(1);
       }
     }
@@ -152,7 +127,7 @@ exec()
       fclose(fp1);
 
     if (tabulate_)
-      cout << " " << bytes_written_ << " bytes" << endl;
+      std::cout << " " << bytes_written_ << " bytes" << std::endl;
 
     if (c == EOF)
       break;
@@ -193,7 +168,7 @@ check_match(FILE *fp, int c)
 
   ++check_pos_;
 
-  uint len = strlen(id_);
+  uint len = id_.size();
 
   if (check_pos_ >= len) {
     check_pos_ = 0;
@@ -202,13 +177,4 @@ check_match(FILE *fp, int c)
   }
 
   return false;
-}
-
-const string &
-CUnconcat::
-getDefId()
-{
-  static string id = "##concat##";
-
-  return id;
 }
