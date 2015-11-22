@@ -24,8 +24,8 @@ OBJ2 = $(patsubst %.cpp,$(OBJ_DIR)/%.o,$(SRC2))
 OBJ3 = $(patsubst %.cpp,$(OBJ_DIR)/%.o,$(SRC3))
 OBJ4 = $(patsubst %.cpp,$(OBJ_DIR)/%.o,$(SRC4))
 
-CFLAGS = -I$(INC_DIR) -I.
-LFLAGS = -L$(LIB_DIR)
+CFLAGS = $(CDEBUG) -I$(INC_DIR) -I.
+LFLAGS = $(LDEBUG) -L$(LIB_DIR)
 
 $(OBJ1): $(OBJ_DIR)/%.o: %.cpp
 	echo "Compiling $<"

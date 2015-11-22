@@ -2,15 +2,20 @@
 #define CCONCAT_FIND_H
 
 #include <CConcatBase.h>
+#include <vector>
 
 class CConcatFind : public CConcatBase {
+ public:
+  typedef std::vector<std::string> Strings;
+
  public:
   CConcatFind();
 
   void setPattern(const std::string &pattern) { pattern_ = pattern; }
 
-  void setList  (bool list  ) { list_   = list  ; }
-  void setNumber(bool number) { number_ = number; }
+  void setList      (bool list          ) { list_       = list  ; }
+  void setNumber    (bool number        ) { number_     = number; }
+  void setExtensions(const Strings &strs) { extensions_ = strs  ; }
 
   bool exec();
 
@@ -20,10 +25,11 @@ class CConcatFind : public CConcatBase {
 
  private:
   std::string pattern_;
-  uint        bytes_written_;
-  std::string check_buffer_;
   bool        list_;
   bool        number_;
+  Strings     extensions_;
+  uint        bytes_written_;
+  std::string check_buffer_;
   std::string current_file_;
   int         current_line_;
 };

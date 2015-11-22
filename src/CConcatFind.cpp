@@ -7,10 +7,11 @@
 int
 main(int argc, char **argv)
 {
-  std::string filename;
-  std::string pattern;
-  bool        list = false;
-  bool        number = false;
+  std::string          filename;
+  std::string          pattern;
+  bool                 list = false;
+  bool                 number = false;
+  CConcatFind::Strings extensions;
 
   for (int i = 1; i < argc; i++) {
     if (argv[i][0] == '-') {
@@ -18,6 +19,29 @@ main(int argc, char **argv)
         list = true;
       else if (argv[i][1] == 'n')
         number = true;
+      else if (argv[i][1] == 'e') {
+        ++i;
+
+        if (i < argc) {
+          std::string exts = argv[i];
+
+          std::string ext;
+
+          for (int j = 0; j < exts.size(); ++j) {
+            if (exts[j] == '|') {
+              if (ext != "")
+                extensions.push_back(ext);
+
+              ext = "";
+            }
+            else
+              ext += exts[j];
+          }
+
+          if (ext != "")
+            extensions.push_back(ext);
+        }
+      }
       else
         std::cerr << "Invalid option " << argv[i] << std::endl;
     }
@@ -30,7 +54,6 @@ main(int argc, char **argv)
         std::cerr << "Usage - " << argv[0] << " <file>" << std::endl;
         exit(1);
       }
-
     }
   }
 
@@ -39,14 +62,15 @@ main(int argc, char **argv)
     exit(1);
   }
 
-  CConcatFind unconcat;
+  CConcatFind find;
 
-  unconcat.setFileName(filename);
-  unconcat.setPattern (pattern);
-  unconcat.setList    (list);
-  unconcat.setNumber  (number);
+  find.setFileName  (filename);
+  find.setPattern   (pattern);
+  find.setList      (list);
+  find.setNumber    (number);
+  find.setExtensions(extensions);
 
-  if (! unconcat.exec())
+  if (! find.exec())
     exit(1);
 
   return 0;
@@ -106,6 +130,30 @@ exec()
       exit(1);
     }
 
+    //---
+
+    bool skip = false;
+
+    if (! extensions_.empty()) {
+      std::string::size_type p = current_file_.rfind('.');
+
+      std::string ext;
+
+      if (p != std::string::npos)
+        ext = current_file_.substr(p + 1);
+
+      skip = true;
+
+      for (int j = 0; j < extensions_.size(); ++j) {
+        if (extensions_[j] == ext) {
+          skip = false;
+          break;
+        }
+      }
+    }
+
+    //---
+
     current_line_ = 1;
 
     std::string line;
@@ -118,7 +166,7 @@ exec()
         break;
 
       if (c == '\n') {
-        if (! found) {
+        if (! skip && ! found) {
           bool found1 = check_line(line);
 
           if (list_ && found1) {
