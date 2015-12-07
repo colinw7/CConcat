@@ -13,9 +13,11 @@ class CConcatFind : public CConcatBase {
 
   void setPattern(const std::string &pattern) { pattern_ = pattern; }
 
-  void setList      (bool list          ) { list_       = list  ; }
-  void setNumber    (bool number        ) { number_     = number; }
-  void setExtensions(const Strings &strs) { extensions_ = strs  ; }
+  void setList      (bool list           ) { list_       = list  ; }
+  void setNumber    (bool number         ) { number_     = number; }
+  void setExtensions(const Strings &strs ) { extensions_ = strs  ; }
+  void setMatchFile (bool b              ) { matchFile_  = b     ; }
+  void setRoot      (const std::string &s) { root_       = s     ; }
 
   bool exec();
 
@@ -28,6 +30,8 @@ class CConcatFind : public CConcatBase {
   bool        list_;
   bool        number_;
   Strings     extensions_;
+  bool        matchFile_;
+  std::string root_;
   uint        bytes_written_;
   std::string check_buffer_;
   std::string current_file_;

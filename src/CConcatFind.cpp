@@ -9,8 +9,10 @@ main(int argc, char **argv)
 {
   std::string          filename;
   std::string          pattern;
+  std::string          root;
   bool                 list = false;
   bool                 number = false;
+  bool                 matchFile = false;
   CConcatFind::Strings extensions;
 
   for (int i = 1; i < argc; i++) {
@@ -42,6 +44,15 @@ main(int argc, char **argv)
             extensions.push_back(ext);
         }
       }
+      else if (argv[i][1] == 'f') {
+        matchFile = true;
+      }
+      else if (argv[i][1] == 'R') {
+        ++i;
+
+        if (i < argc)
+          root = std::string(argv[i]) + "/";
+      }
       else
         std::cerr << "Invalid option " << argv[i] << std::endl;
     }
@@ -69,6 +80,8 @@ main(int argc, char **argv)
   find.setList      (list);
   find.setNumber    (number);
   find.setExtensions(extensions);
+  find.setMatchFile (matchFile);
+  find.setRoot      (root);
 
   if (! find.exec())
     exit(1);
@@ -78,7 +91,7 @@ main(int argc, char **argv)
 
 CConcatFind::
 CConcatFind() :
- list_(false), number_(false), current_line_(1)
+ list_(false), number_(false), matchFile_(false), current_line_(1)
 {
 }
 
@@ -154,10 +167,24 @@ exec()
 
     //---
 
+    bool found = false;
+
+    if (matchFile_) {
+      std::string::size_type p = current_file_.find(pattern_);
+
+      if (p != std::string::npos) {
+        std::cout << root_ << current_file_ << std::endl;
+        found = true;
+      }
+
+      skip = true;
+    }
+
+    //---
+
     current_line_ = 1;
 
     std::string line;
-    bool        found = false;
 
     bytes_written_ = 0;
 
@@ -170,7 +197,7 @@ exec()
           bool found1 = check_line(line);
 
           if (list_ && found1) {
-            std::cout << current_file_ << std::endl;
+            std::cout << root_ << current_file_ << std::endl;
             found = true;
           }
         }
@@ -205,9 +232,9 @@ check_line(const std::string &line) const
 
   if (! list_) {
     if (number_)
-      std::cout << current_file_ << ":" << current_line_ << ": " << line << std::endl;
+      std::cout << root_ << current_file_ << ":" << current_line_ << ": " << line << std::endl;
     else
-      std::cout << current_file_ << ": " << line << std::endl;
+      std::cout << root_ << current_file_ << ": " << line << std::endl;
   }
 
   return true;
