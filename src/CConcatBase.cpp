@@ -4,7 +4,7 @@
 
 CConcatBase::
 CConcatBase() :
- check_pos_(0)
+ checkPos_(0)
 {
 }
 
@@ -23,7 +23,7 @@ readId(FILE *fp)
   }
 
   if (c == EOF) {
-    std::cerr << "Invalid Concat File " << filename_ << std::endl;
+    std::cerr << "Invalid Concat File " << filename() << std::endl;
     return false;
   }
 

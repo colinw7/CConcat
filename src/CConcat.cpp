@@ -78,14 +78,14 @@ bool
 CConcat::
 check_match(int c)
 {
-  if (c != id_[check_pos_]) {
-    check_pos_ = 0;
+  if (c != id_[checkPos_]) {
+    checkPos_ = 0;
     return false;
   }
 
-  ++check_pos_;
+  ++checkPos_;
 
   uint len = id_.size();
 
-  return (check_pos_ >= len);
+  return (checkPos_ >= len);
 }

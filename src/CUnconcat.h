@@ -7,16 +7,17 @@ class CUnconcat : public CConcatBase {
  public:
   CUnconcat();
 
-  void setTabulate(bool tabulate) { tabulate_ = tabulate; }
+  bool isTabulate() const { return tabulate_; }
+  void setTabulate(bool b) { tabulate_ = b; }
 
   bool exec();
 
   bool check_match(FILE *fp, int c);
 
  private:
-  uint        bytes_written_;
-  std::string check_buffer_;
-  bool        tabulate_;
+  uint        bytesWritten_ { 0 };
+  std::string checkBuffer_;
+  bool        tabulate_     { false };
 };
 
 #endif

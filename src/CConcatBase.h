@@ -8,8 +8,11 @@ class CConcatBase {
  public:
   CConcatBase();
 
-  const std::string &fileName() const { return filename_; }
-  void setFileName(const std::string &v) { filename_ = v; }
+  const std::string &id() const { return id_; }
+  void setId(const std::string &s) { id_ = s; }
+
+  const std::string &filename() const { return filename_; }
+  void setFilename(const std::string &s) { filename_ = s; }
 
  protected:
   bool readId(FILE *fp);
@@ -19,7 +22,7 @@ class CConcatBase {
  protected:
   std::string id_;
   std::string filename_;
-  uint        check_pos_;
+  uint        checkPos_ { 0 };
 };
 
 #endif

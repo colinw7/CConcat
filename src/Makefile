@@ -24,8 +24,10 @@ OBJ2 = $(patsubst %.cpp,$(OBJ_DIR)/%.o,$(SRC2))
 OBJ3 = $(patsubst %.cpp,$(OBJ_DIR)/%.o,$(SRC3))
 OBJ4 = $(patsubst %.cpp,$(OBJ_DIR)/%.o,$(SRC4))
 
-CFLAGS = $(CDEBUG) -I$(INC_DIR) -I.
-LFLAGS = $(LDEBUG) -L$(LIB_DIR)
+CFLAGS = $(CDEBUG) -std=c++11 -I$(INC_DIR) -I. -I../../CGlob/include
+LFLAGS = $(LDEBUG) -L$(LIB_DIR) -L../../CGlob/lib
+
+LIBS = -lCGlob 
 
 $(OBJ1): $(OBJ_DIR)/%.o: %.cpp
 	echo "Compiling $<"
@@ -45,15 +47,15 @@ $(OBJ4): $(OBJ_DIR)/%.o: %.cpp
 
 $(BIN_DIR)/CConcat: $(OBJ1) $(OBJ4)
 	@echo "Linking CConcat"
-	g++ -o $(BIN_DIR)/CConcat $(LFLAGS) $(OBJ1) $(OBJ4)
+	g++ -o $(BIN_DIR)/CConcat $(LFLAGS) $(OBJ1) $(OBJ4) $(LIBS)
 
 $(BIN_DIR)/CUnconcat: $(OBJ2) $(OBJ4)
 	@echo "Linking CUnconcat"
-	g++ -o $(BIN_DIR)/CUnconcat $(LFLAGS) $(OBJ2) $(OBJ4)
+	g++ -o $(BIN_DIR)/CUnconcat $(LFLAGS) $(OBJ2) $(OBJ4) $(LIBS)
 
 $(BIN_DIR)/CConcatFind: $(OBJ3) $(OBJ4)
 	@echo "Linking CConcatFind"
-	g++ -o $(BIN_DIR)/CConcatFind $(LFLAGS) $(OBJ3) $(OBJ4)
+	g++ -o $(BIN_DIR)/CConcatFind $(LFLAGS) $(OBJ3) $(OBJ4) $(LIBS)
 
 clean:
 	$(RM) -f $(OBJ_DIR)/*.o

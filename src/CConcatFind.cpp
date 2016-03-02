@@ -13,11 +13,12 @@ main(int argc, char **argv)
   bool                 list = false;
   bool                 number = false;
   bool                 matchFile = false;
+  bool                 glob = false;
   CConcatFind::Strings extensions;
 
   for (int i = 1; i < argc; i++) {
     if (argv[i][0] == '-') {
-      if      (argv[i][1] == 'L')
+      if      (argv[i][1] == 'L' || argv[i][1] == 'l')
         list = true;
       else if (argv[i][1] == 'n')
         number = true;
@@ -53,6 +54,9 @@ main(int argc, char **argv)
         if (i < argc)
           root = std::string(argv[i]) + "/";
       }
+      else if (argv[i][1] == 'g') {
+        glob = true;
+      }
       else
         std::cerr << "Invalid option " << argv[i] << std::endl;
     }
@@ -75,12 +79,13 @@ main(int argc, char **argv)
 
   CConcatFind find;
 
-  find.setFileName  (filename);
+  find.setFilename  (filename);
   find.setPattern   (pattern);
   find.setList      (list);
   find.setNumber    (number);
   find.setExtensions(extensions);
   find.setMatchFile (matchFile);
+  find.setGlob      (glob);
   find.setRoot      (root);
 
   if (! find.exec())
@@ -90,19 +95,26 @@ main(int argc, char **argv)
 }
 
 CConcatFind::
-CConcatFind() :
- list_(false), number_(false), matchFile_(false), current_line_(1)
+CConcatFind()
 {
+}
+
+void
+CConcatFind::
+setPattern(const std::string &s)
+{
+  pattern_ = s;
+  glob_    = CGlob("*" + pattern_ + "*");
 }
 
 bool
 CConcatFind::
 exec()
 {
-  FILE *fp = fopen(filename_.c_str(), "rb");
+  FILE *fp = fopen(filename().c_str(), "rb");
 
   if (fp == NULL) {
-    std::cerr << "Can't Open Input File " << filename_ << std::endl;
+    std::cerr << "Can't Open Input File " << filename() << std::endl;
     return false;
   }
 
@@ -111,7 +123,7 @@ exec()
   int no = fread(buffer, 1, 10, fp);
 
   if (no != 10 || strncmp(buffer, "CONCAT_ID=", 10) != 0) {
-    std::cerr << "Invalid Concat File " << filename_ << std::endl;
+    std::cerr << "Invalid Concat File " << filename() << std::endl;
     exit(1);
   }
 
@@ -123,23 +135,23 @@ exec()
   no = fread(buffer, 1, len, fp);
 
   if (no != len || strncmp(buffer, id_.c_str(), len) != 0) {
-    std::cerr << "Invalid Concat File " << filename_ << std::endl;
+    std::cerr << "Invalid Concat File " << filename() << std::endl;
     exit(1);
   }
 
   while (true) {
-    current_file_ = "";
+    setCurrentFile("");
 
     int c = fgetc(fp);
 
     while (c != '\n' && c != EOF) {
-      current_file_ += char(c);
+      currentFile_ += char(c);
 
       c = fgetc(fp);
     }
 
     if (c != '\n') {
-      std::cerr << "Invalid Concat File " << filename_ << std::endl;
+      std::cerr << "Invalid Concat File " << filename() << std::endl;
       exit(1);
     }
 
@@ -147,18 +159,18 @@ exec()
 
     bool skip = false;
 
-    if (! extensions_.empty()) {
-      std::string::size_type p = current_file_.rfind('.');
+    if (! extensions().empty()) {
+      std::string::size_type p = currentFile().rfind('.');
 
       std::string ext;
 
       if (p != std::string::npos)
-        ext = current_file_.substr(p + 1);
+        ext = currentFile().substr(p + 1);
 
       skip = true;
 
-      for (int j = 0; j < extensions_.size(); ++j) {
-        if (extensions_[j] == ext) {
+      for (int j = 0; j < extensions().size(); ++j) {
+        if (extensions()[j] == ext) {
           skip = false;
           break;
         }
@@ -169,11 +181,11 @@ exec()
 
     bool found = false;
 
-    if (matchFile_) {
-      std::string::size_type p = current_file_.find(pattern_);
+    if (isMatchFile()) {
+      std::string::size_type p = checkPattern(currentFile());
 
       if (p != std::string::npos) {
-        std::cout << root_ << current_file_ << std::endl;
+        std::cout << root() << currentFile() << std::endl;
         found = true;
       }
 
@@ -182,35 +194,35 @@ exec()
 
     //---
 
-    current_line_ = 1;
+    currentLine_ = 1;
 
     std::string line;
 
-    bytes_written_ = 0;
+    bytesWritten_ = 0;
 
     while ((c = fgetc(fp)) != EOF) {
-      if (check_match(c))
+      if (checkMatch(c))
         break;
 
       if (c == '\n') {
         if (! skip && ! found) {
-          bool found1 = check_line(line);
+          bool found1 = checkLine(line);
 
-          if (list_ && found1) {
-            std::cout << root_ << current_file_ << std::endl;
+          if (isList() && found1) {
+            std::cout << root() << currentFile() << std::endl;
             found = true;
           }
         }
 
         line = "";
 
-        ++current_line_;
+        ++currentLine_;
       }
       else
         line += c;
     }
 
-    check_match(EOF);
+    checkMatch(EOF);
 
     if (c == EOF)
       break;
@@ -223,18 +235,16 @@ exec()
 
 bool
 CConcatFind::
-check_line(const std::string &line) const
+checkLine(const std::string &line) const
 {
-  std::string::size_type p = line.find(pattern_);
-
-  if (p == std::string::npos)
+  if (! checkPattern(line))
     return false;
 
-  if (! list_) {
-    if (number_)
-      std::cout << root_ << current_file_ << ":" << current_line_ << ": " << line << std::endl;
+  if (! isList()) {
+    if (isNumber())
+      std::cout << root() << currentFile() << ":" << currentLine() << ": " << line << std::endl;
     else
-      std::cout << root_ << current_file_ << ": " << line << std::endl;
+      std::cout << root() << currentFile() << ": " << line << std::endl;
   }
 
   return true;
@@ -242,28 +252,38 @@ check_line(const std::string &line) const
 
 bool
 CConcatFind::
-check_match(int c)
+checkPattern(const std::string &s) const
 {
-  if (c != id_[check_pos_]) {
-    bytes_written_ += check_pos_;
+  if (isGlob())
+    return glob_.compare(s);
+  else
+    return (s.find(pattern()) != std::string::npos);
+}
+
+bool
+CConcatFind::
+checkMatch(int c)
+{
+  if (c != id_[checkPos_]) {
+    bytesWritten_ += checkPos_;
 
     if (c != EOF)
-      ++bytes_written_;
+      ++bytesWritten_;
 
-    check_pos_    = 0;
-    check_buffer_ = "";
+    checkPos_    = 0;
+    checkBuffer_ = "";
 
     return false;
   }
 
-  check_buffer_ += char(c);
+  checkBuffer_ += char(c);
 
-  ++check_pos_;
+  ++checkPos_;
 
   uint len = id_.size();
 
-  if (check_pos_ >= len) {
-    check_pos_ = 0;
+  if (checkPos_ >= len) {
+    checkPos_ = 0;
 
     return true;
   }

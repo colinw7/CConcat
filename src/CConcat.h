@@ -8,8 +8,8 @@ class CConcat : public CConcatBase {
  public:
   CConcat();
 
-  void addFile(const std::string &fileName) {
-    files_.push_back(fileName);
+  void addFile(const std::string &s) {
+    files_.push_back(s);
   }
 
   uint getNumFiles() const { return files_.size(); }
