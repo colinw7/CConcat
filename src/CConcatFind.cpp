@@ -182,9 +182,7 @@ exec()
     bool found = false;
 
     if (isMatchFile()) {
-      std::string::size_type p = checkPattern(currentFile());
-
-      if (p != std::string::npos) {
+      if (checkPattern(currentFile())) {
         std::cout << root() << currentFile() << std::endl;
         found = true;
       }
