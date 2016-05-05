@@ -8,6 +8,9 @@ class CConcat : public CConcatBase {
  public:
   CConcat();
 
+  bool isSymlink() const { return symlink_; }
+  void setSymlink(bool b) { symlink_ = b; }
+
   void addFile(const std::string &s) {
     files_.push_back(s);
   }
@@ -20,6 +23,7 @@ class CConcat : public CConcatBase {
   bool check_match(int c);
 
  private:
+  bool                     symlink_ { true };
   std::vector<std::string> files_;
 };
 

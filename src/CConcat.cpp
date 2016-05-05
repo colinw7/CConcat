@@ -2,6 +2,7 @@
 #include <iostream>
 #include <cstdio>
 #include <cstdlib>
+#include <sys/stat.h>
 
 int
 main(int argc, char **argv)
@@ -9,8 +10,14 @@ main(int argc, char **argv)
   CConcat concat;
 
   for (int i = 1; i < argc; i++) {
-    if (argv[i][0] == '-')
-      std::cerr << "Invalid option " << argv[i] << std::endl;
+    if (argv[i][0] == '-') {
+      if      (argv[i][1] == 'l')
+        concat.setSymlink(true);
+      else if (argv[i][1] == 'L')
+        concat.setSymlink(false);
+      else
+        std::cerr << "Invalid option " << argv[i] << std::endl;
+    }
     else
       concat.addFile(argv[i]);
   }
@@ -47,12 +54,37 @@ exec()
   uint num_files = files_.size();
 
   for (uint i = 0; i < num_files; ++i) {
+    // check allowable file type (regular and not link if disabled)
+    struct stat file_stat;
+
+    if (! symlink_) {
+      if (lstat(files_[i].c_str(), &file_stat) != 0)
+        continue;
+
+      if (S_ISLNK(file_stat.st_mode))
+        continue;
+
+      if (! S_ISREG(file_stat.st_mode))
+        continue;
+    }
+    else {
+      if (stat(files_[i].c_str(), &file_stat) != 0)
+        continue;
+
+      if (! S_ISREG(file_stat.st_mode))
+        continue;
+    }
+
+    //---
+
     FILE *fp = fopen(files_[i].c_str(), "rb");
 
     if (! fp) {
       std::cerr << "Can't Open Input File " << files_[i] << std::endl;
       continue;
     }
+
+    //---
 
     fprintf(stdout, "%s%s\n", id_.c_str(), files_[i].c_str());
 

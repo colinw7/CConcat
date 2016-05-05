@@ -1,4 +1,4 @@
-#.SILENT:
+.SILENT:
 
 CC = g++
 AR = ar
@@ -12,7 +12,11 @@ OBJ_DIR = ../obj
 LIB_DIR = ../lib
 BIN_DIR = ../bin
 
-all: $(BIN_DIR)/CConcat $(BIN_DIR)/CUnconcat $(BIN_DIR)/CConcatFind
+all: dirs $(BIN_DIR)/CConcat $(BIN_DIR)/CUnconcat $(BIN_DIR)/CConcatFind
+
+dirs:
+	@if [ ! -e ../obj ]; then mkdir ../obj; fi
+	@if [ ! -e ../bin ]; then mkdir ../bin; fi
 
 SRC1 = CConcat.cpp
 SRC2 = CUnconcat.cpp
@@ -30,19 +34,19 @@ LFLAGS = $(LDEBUG) -L$(LIB_DIR) -L../../CGlob/lib
 LIBS = -lCGlob 
 
 $(OBJ1): $(OBJ_DIR)/%.o: %.cpp
-	echo "Compiling $<"
+	@echo "Compiling $<"
 	$(CC) -c $(CFLAGS) $< -o $(OBJ_DIR)/$*.o
 
 $(OBJ2): $(OBJ_DIR)/%.o: %.cpp
-	echo "Compiling $<"
+	@echo "Compiling $<"
 	$(CC) -c $(CFLAGS) $< -o $(OBJ_DIR)/$*.o
 
 $(OBJ3): $(OBJ_DIR)/%.o: %.cpp
-	echo "Compiling $<"
+	@echo "Compiling $<"
 	$(CC) -c $(CFLAGS) $< -o $(OBJ_DIR)/$*.o
 
 $(OBJ4): $(OBJ_DIR)/%.o: %.cpp
-	echo "Compiling $<"
+	@echo "Compiling $<"
 	$(CC) -c $(CFLAGS) $< -o $(OBJ_DIR)/$*.o
 
 $(BIN_DIR)/CConcat: $(OBJ1) $(OBJ4)
