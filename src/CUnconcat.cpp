@@ -12,7 +12,9 @@ main(int argc, char **argv)
 
   for (int i = 1; i < argc; i++) {
     if (argv[i][0] == '-') {
-      if (argv[i][1] == 't')
+      if      (argv[i][1] == '-')
+        filename = "--";
+      else if (argv[i][1] == 't')
         tabulate = true;
       else
         std::cerr << "Invalid option " << argv[i] << std::endl;
@@ -52,11 +54,17 @@ bool
 CUnconcat::
 exec()
 {
-  FILE *fp = fopen(filename_.c_str(), "rb");
+  FILE *fp;
 
-  if (fp == 0) {
-    std::cerr << "Can't Open Input File " << filename() << std::endl;
-    return false;
+  if (filename_ == "--")
+    fp = stdin;
+  else {
+    fp = fopen(filename_.c_str(), "rb");
+
+    if (! fp) {
+      std::cerr << "Can't Open Input File " << filename() << std::endl;
+      return false;
+    }
   }
 
   char buffer[256];
@@ -132,7 +140,8 @@ exec()
       break;
   }
 
-  fclose(fp);
+  if (fp != stdin)
+    fclose(fp);
 
   return true;
 }
