@@ -13,6 +13,7 @@ main(int argc, char **argv)
   bool                 list = false;
   bool                 number = false;
   bool                 matchFile = false;
+  bool                 matchWord = false;
   bool                 glob = false;
   CConcatFind::Strings extensions;
 
@@ -57,6 +58,9 @@ main(int argc, char **argv)
       else if (argv[i][1] == 'g') {
         glob = true;
       }
+      else if (argv[i][1] == 'w') {
+        matchWord = true;
+      }
       else
         std::cerr << "Invalid option " << argv[i] << std::endl;
     }
@@ -85,6 +89,7 @@ main(int argc, char **argv)
   find.setNumber    (number);
   find.setExtensions(extensions);
   find.setMatchFile (matchFile);
+  find.setMatchWord (matchWord);
   find.setGlob      (glob);
   find.setRoot      (root);
 
@@ -254,8 +259,25 @@ checkPattern(const std::string &s) const
 {
   if (isGlob())
     return glob_.compare(s);
-  else
-    return (s.find(pattern()) != std::string::npos);
+
+  auto p = s.find(pattern());
+
+  if (p == std::string::npos)
+    return false;
+
+  if (matchWord_) {
+    int pl = p - 1;
+
+    if (pl > 0 && isalnum(s[pl]))
+      return false;
+
+    int pr = p + pattern().size();
+
+    if (s[pr] != '\0' && isalnum(s[pr]))
+      return false;
+  }
+
+  return true;
 }
 
 bool

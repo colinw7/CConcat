@@ -27,6 +27,9 @@ class CConcatFind : public CConcatBase {
   bool isMatchFile() const { return matchFile_; }
   void setMatchFile(bool b) { matchFile_ = b; }
 
+  bool isMatchWord() const { return matchWord_; }
+  void setMatchWord(bool b) { matchWord_ = b; }
+
   const std::string &root() const { return root_; }
   void setRoot(const std::string &s) { root_ = s; }
 
@@ -55,6 +58,7 @@ class CConcatFind : public CConcatBase {
   bool        number_       { false };
   Strings     extensions_;
   bool        matchFile_    { false };
+  bool        matchWord_    { false };
   bool        isGlob_       { false };
   std::string root_;
   uint        bytesWritten_ { 0 };
