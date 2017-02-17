@@ -12,6 +12,7 @@ main(int argc, char **argv)
   std::string          root;
   bool                 list = false;
   bool                 number = false;
+  bool                 nocase = false;
   bool                 matchFile = false;
   bool                 matchWord = false;
   bool                 glob = false;
@@ -23,6 +24,8 @@ main(int argc, char **argv)
         list = true;
       else if (argv[i][1] == 'n')
         number = true;
+      else if (argv[i][1] == 'i')
+        nocase = true;
       else if (argv[i][1] == 'e') {
         ++i;
 
@@ -83,6 +86,7 @@ main(int argc, char **argv)
 
   CConcatFind find;
 
+  find.setNoCase    (nocase);
   find.setFilename  (filename);
   find.setPattern   (pattern);
   find.setList      (list);
@@ -110,6 +114,11 @@ setPattern(const std::string &s)
 {
   pattern_ = s;
   glob_    = CGlob("*" + pattern_ + "*");
+
+  if (isNoCase())
+    lpattern_ = toLower(pattern_);
+  else
+    lpattern_ = pattern_;
 }
 
 bool
@@ -118,7 +127,7 @@ exec()
 {
   FILE *fp = fopen(filename().c_str(), "rb");
 
-  if (fp == NULL) {
+  if (! fp) {
     std::cerr << "Can't Open Input File " << filename() << std::endl;
     return false;
   }
@@ -255,26 +264,48 @@ checkLine(const std::string &line) const
 
 bool
 CConcatFind::
-checkPattern(const std::string &s) const
+checkPattern(const std::string &str) const
 {
   if (isGlob())
-    return glob_.compare(s);
+    return glob_.compare(str);
 
-  auto p = s.find(pattern());
+  if (! isNoCase()) {
+    auto p = str.find(pattern());
 
-  if (p == std::string::npos)
-    return false;
-
-  if (matchWord_) {
-    int pl = p - 1;
-
-    if (pl > 0 && isalnum(s[pl]))
+    if (p == std::string::npos)
       return false;
 
-    int pr = p + pattern().size();
+    if (matchWord_) {
+      int pl = p - 1;
 
-    if (s[pr] != '\0' && isalnum(s[pr]))
+      if (pl > 0 && isalnum(str[pl]))
+        return false;
+
+      int pr = p + pattern().size();
+
+      if (str[pr] != '\0' && isalnum(str[pr]))
+        return false;
+    }
+  }
+  else {
+    std::string lstr = toLower(str);
+
+    auto p = lstr.find(pattern());
+
+    if (p == std::string::npos)
       return false;
+
+    if (matchWord_) {
+      int pl = p - 1;
+
+      if (pl > 0 && isalnum(lstr[pl]))
+        return false;
+
+      int pr = p + pattern().size();
+
+      if (lstr[pr] != '\0' && isalnum(lstr[pr]))
+        return false;
+    }
   }
 
   return true;
@@ -309,4 +340,16 @@ checkMatch(int c)
   }
 
   return false;
+}
+
+std::string
+CConcatFind::
+toLower(const std::string &str) const
+{
+  std::string lstr = str;
+
+  for (size_t i = 0; i < str.size(); ++i)
+    lstr[i] = tolower(lstr[i]);
+
+  return lstr;
 }

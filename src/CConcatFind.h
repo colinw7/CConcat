@@ -21,6 +21,9 @@ class CConcatFind : public CConcatBase {
   bool isNumber() const { return number_; }
   void setNumber(bool b) { number_ = b; }
 
+  bool isNoCase() const { return noCase_; }
+  void setNoCase(bool b) { noCase_ = b; }
+
   const Strings &extensions() const { return extensions_; }
   void setExtensions(const Strings &s) { extensions_ = s; }
 
@@ -51,11 +54,14 @@ class CConcatFind : public CConcatBase {
 
   bool checkPattern(const std::string &s) const;
 
+  std::string toLower(const std::string &str) const;
+
  private:
   std::string pattern_;
   CGlob       glob_;
   bool        list_         { false };
   bool        number_       { false };
+  bool        noCase_       { false };
   Strings     extensions_;
   bool        matchFile_    { false };
   bool        matchWord_    { false };
@@ -65,6 +71,7 @@ class CConcatFind : public CConcatBase {
   std::string checkBuffer_;
   std::string currentFile_;
   int         currentLine_   { 1 };
+  std::string lpattern_;
 };
 
 #endif
