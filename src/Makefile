@@ -28,7 +28,7 @@ OBJ2 = $(patsubst %.cpp,$(OBJ_DIR)/%.o,$(SRC2))
 OBJ3 = $(patsubst %.cpp,$(OBJ_DIR)/%.o,$(SRC3))
 OBJ4 = $(patsubst %.cpp,$(OBJ_DIR)/%.o,$(SRC4))
 
-CFLAGS = $(CDEBUG) -std=c++11 -I$(INC_DIR) -I. -I../../CGlob/include
+CFLAGS = $(CDEBUG) -std=c++14 -I$(INC_DIR) -I. -I../../CGlob/include
 LFLAGS = $(LDEBUG) -L$(LIB_DIR) -L../../CGlob/lib
 
 LIBS = -lCGlob 
