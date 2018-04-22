@@ -5,12 +5,15 @@
 #include <CGlob.h>
 #include <vector>
 
+class CommentParser;
+
 class CConcatFind : public CConcatBase {
  public:
   typedef std::vector<std::string> Strings;
 
  public:
   CConcatFind();
+ ~CConcatFind();
 
   const std::string &pattern() const { return pattern_; }
   void setPattern(const std::string &s);
@@ -39,11 +42,21 @@ class CConcatFind : public CConcatBase {
   bool isGlob() const { return isGlob_; }
   void setGlob(bool b) { isGlob_ = b; }
 
+  bool isComment() const { return comment_; }
+  void setComment(bool b) { comment_ = b; }
+
+  bool isNoComment() const { return noComment_; }
+  void setNoComment(bool b) { noComment_ = b; }
+
   bool exec();
 
   bool checkMatch(int c);
 
   bool checkLine(const std::string &line) const;
+
+  void addLineChar(char c);
+
+  int getChar() const;
 
  private:
   const std::string &currentFile() const { return currentFile_; }
@@ -61,21 +74,26 @@ class CConcatFind : public CConcatBase {
   bool isWord(const std::string &str, int pos, int len) const;
 
  private:
-  std::string pattern_;
-  CGlob       glob_;
-  bool        list_         { false };
-  bool        number_       { false };
-  bool        noCase_       { false };
-  Strings     extensions_;
-  bool        matchFile_    { false };
-  bool        matchWord_    { false };
-  bool        isGlob_       { false };
-  std::string root_;
-  uint        bytesWritten_ { 0 };
-  std::string checkBuffer_;
-  std::string currentFile_;
-  int         currentLine_   { 1 };
-  std::string lpattern_;
+  std::string    pattern_;
+  CGlob          glob_;
+  bool           list_          { false };
+  bool           number_        { false };
+  bool           noCase_        { false };
+  Strings        extensions_;
+  bool           matchFile_     { false };
+  bool           matchWord_     { false };
+  bool           isGlob_        { false };
+  bool           comment_       { false };
+  bool           noComment_     { false };
+  std::string    root_;
+  uint           bytesWritten_  { 0 };
+  std::string    checkBuffer_;
+  std::string    currentFile_;
+  int            currentLine_   { 1 };
+  std::string    lpattern_;
+  CommentParser* commentParser_ { nullptr };
+  FILE*          fp_            { nullptr };
+  std::string    line_;
 };
 
 #endif

@@ -1,8 +1,35 @@
 #include <CConcatFind.h>
+#include <CCommentParser.h>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+
+class CommentParser : public CCommentParser {
+ public:
+  CommentParser(CConcatFind *find) :
+   find_(find) {
+  }
+
+  void put_comment(char c) override {
+    if (find_->isComment())
+      find_->addLineChar(c);
+  }
+
+  void put_normal(char c) override {
+    if (find_->isNoComment())
+      find_->addLineChar(c);
+  }
+
+  int getChar() const override {
+    return find_->getChar();
+  }
+
+ private:
+  CConcatFind *find_ { nullptr };
+};
+
+//---
 
 int
 main(int argc, char **argv)
@@ -11,31 +38,43 @@ main(int argc, char **argv)
     std::cerr << "Usage:";
     std::cerr << "  CConcatFind [-l|L] [-n] [-i] [-e] [-f] [-R] [-g][ -w] <file> <pattern>\n";
     std::cerr << "\n";
-    std::cerr << "    -l|L      : list files containing pattern\n";
-    std::cerr << "    -n        : show line number\n";
-    std::cerr << "    -i        : no case matching\n";
-    std::cerr << "    -e <exts> : only match files with specified extensions\n";
-    std::cerr << "    -f        : match only filename\n";
-    std::cerr << "    -R <root> : root directory of file\n";
-    std::cerr << "    -g        : glob match\n";
-    std::cerr << "    -w        : word match\n";
-    std::cerr << "    -h|--help : help for usage\n";
+    std::cerr << "    -l|L       : list files containing pattern\n";
+    std::cerr << "    -n         : show line number\n";
+    std::cerr << "    -i         : no case matching\n";
+    std::cerr << "    -e <exts>  : only match files with specified extensions\n";
+    std::cerr << "    -f         : match only filename\n";
+    std::cerr << "    -R <root>  : root directory of file\n";
+    std::cerr << "    -g         : glob match\n";
+    std::cerr << "    -w         : word match\n";
+    std::cerr << "    -comment   : match comments only\n";
+    std::cerr << "    -nocomment : match no comments only\n";
+    std::cerr << "    -h|--help  : help for usage\n";
   };
 
   std::string          filename;
   std::string          pattern;
   std::string          root;
-  bool                 list = false;
-  bool                 number = false;
-  bool                 nocase = false;
-  bool                 matchFile = false;
-  bool                 matchWord = false;
-  bool                 glob = false;
   CConcatFind::Strings extensions;
+
+  bool list      = false;
+  bool number    = false;
+  bool nocase    = false;
+  bool matchFile = false;
+  bool matchWord = false;
+  bool comment   = false;
+  bool nocomment = false;
+  bool glob      = false;
 
   for (int i = 1; i < argc; i++) {
     if (argv[i][0] == '-') {
-      if      (argv[i][1] == 'L' || argv[i][1] == 'l')
+      if      (strcmp(&argv[i][1], "comment") == 0) {
+        comment = true;
+      }
+      else if (strcmp(&argv[i][1], "nocomment") == 0 ||
+               strcmp(&argv[i][1], "no_comment") == 0) {
+        nocomment = true;
+      }
+      else if (argv[i][1] == 'L' || argv[i][1] == 'l')
         list = true;
       else if (argv[i][1] == 'n')
         number = true;
@@ -115,6 +154,8 @@ main(int argc, char **argv)
   find.setMatchWord (matchWord);
   find.setGlob      (glob);
   find.setRoot      (root);
+  find.setComment   (comment);
+  find.setNoComment (nocomment);
 
   if (! find.exec())
     exit(1);
@@ -125,6 +166,12 @@ main(int argc, char **argv)
 CConcatFind::
 CConcatFind()
 {
+}
+
+CConcatFind::
+~CConcatFind()
+{
+  delete commentParser_;
 }
 
 void
@@ -144,43 +191,60 @@ bool
 CConcatFind::
 exec()
 {
-  FILE *fp = fopen(filename().c_str(), "rb");
+  if (isComment() || isNoComment())
+    commentParser_ = new CommentParser(this);
 
-  if (! fp) {
+  //---
+
+  // open file
+  fp_ = fopen(filename().c_str(), "rb");
+
+  if (! fp_) {
     std::cerr << "Can't Open Input File " << filename() << std::endl;
     return false;
   }
 
+  //---
+
+  // read concat id line
   char buffer[256];
 
-  int no = fread(buffer, 1, 10, fp);
+  int no = fread(buffer, 1, 10, fp_);
 
   if (no != 10 || strncmp(buffer, "CONCAT_ID=", 10) != 0) {
     std::cerr << "Invalid Concat File " << filename() << std::endl;
     exit(1);
   }
 
-  if (! readId(fp))
+  if (! readId(fp_))
     exit(1);
 
+  //---
+
+  // read id
   uint len = id_.size();
 
-  no = fread(buffer, 1, len, fp);
+  no = fread(buffer, 1, len, fp_);
 
   if (no != len || strncmp(buffer, id_.c_str(), len) != 0) {
     std::cerr << "Invalid Concat File " << filename() << std::endl;
     exit(1);
   }
 
+  //---
+
+  // read file chars
   while (true) {
+    // get file name
+
     setCurrentFile("");
 
-    int c = fgetc(fp);
+    int c = getChar();
 
     while (c != '\n' && c != EOF) {
       currentFile_ += char(c);
 
-      c = fgetc(fp);
+      c = getChar();
     }
 
     if (c != '\n') {
@@ -190,6 +254,7 @@ exec()
 
     //---
 
+    // check extensions
     bool skip = false;
 
     if (! extensions().empty()) {
@@ -212,6 +277,7 @@ exec()
 
     //---
 
+    // check file match
     bool found = false;
 
     if (isMatchFile()) {
@@ -225,19 +291,20 @@ exec()
 
     //---
 
+    // process lines
     currentLine_ = 1;
 
-    std::string line;
+    line_ = "";
 
     bytesWritten_ = 0;
 
-    while ((c = fgetc(fp)) != EOF) {
+    while ((c = getChar()) != EOF) {
       if (checkMatch(c))
         break;
 
       if (c == '\n') {
         if (! skip && ! found) {
-          bool found1 = checkLine(line);
+          bool found1 = checkLine(line_);
 
           if (isList() && found1) {
             std::cout << root() << currentFile() << std::endl;
@@ -245,12 +312,19 @@ exec()
           }
         }
 
-        line = "";
+        if (isComment() || isNoComment())
+          commentParser_->processCChar(c);
+
+        line_ = "";
 
         ++currentLine_;
       }
-      else
-        line += c;
+      else {
+        if (isComment() || isNoComment())
+          commentParser_->processCChar(c);
+        else
+          addLineChar(c);
+      }
     }
 
     checkMatch(EOF);
@@ -259,9 +333,23 @@ exec()
       break;
   }
 
-  fclose(fp);
+  fclose(fp_);
 
   return true;
+}
+
+void
+CConcatFind::
+addLineChar(char c)
+{
+  line_ += c;
+}
+
+int
+CConcatFind::
+getChar() const
+{
+  return fgetc(fp_);
 }
 
 bool

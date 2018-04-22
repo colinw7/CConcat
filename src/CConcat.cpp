@@ -22,7 +22,7 @@ main(int argc, char **argv)
       concat.addFile(argv[i]);
   }
 
-  if (concat.getNumFiles() <= 1) {
+  if (concat.getNumFiles() < 1) {
     std::cerr << "Usage - " << argv[0] << " <file1> <file2> ..." << std::endl;
     exit(1);
   }
