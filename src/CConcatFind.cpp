@@ -7,6 +7,21 @@
 int
 main(int argc, char **argv)
 {
+  auto showUsage = []() {
+    std::cerr << "Usage:";
+    std::cerr << "  CConcatFind [-l|L] [-n] [-i] [-e] [-f] [-R] [-g][ -w] <file> <pattern>\n";
+    std::cerr << "\n";
+    std::cerr << "    -l|L      : list files containing pattern\n";
+    std::cerr << "    -n        : show line number\n";
+    std::cerr << "    -i        : no case matching\n";
+    std::cerr << "    -e <exts> : only match files with specified extensions\n";
+    std::cerr << "    -f        : match only filename\n";
+    std::cerr << "    -R <root> : root directory of file\n";
+    std::cerr << "    -g        : glob match\n";
+    std::cerr << "    -w        : word match\n";
+    std::cerr << "    -h|--help : help for usage\n";
+  };
+
   std::string          filename;
   std::string          pattern;
   std::string          root;
@@ -64,6 +79,10 @@ main(int argc, char **argv)
       else if (argv[i][1] == 'w') {
         matchWord = true;
       }
+      else if (argv[i][1] == 'h' || strcmp(&argv[i][1], "-help") == 0) {
+        showUsage();
+        exit(0);
+      }
       else
         std::cerr << "Invalid option " << argv[i] << std::endl;
     }
@@ -73,14 +92,14 @@ main(int argc, char **argv)
       else if (pattern == "")
         pattern = argv[i];
       else {
-        std::cerr << "Usage - " << argv[0] << " <file>" << std::endl;
+        showUsage();
         exit(1);
       }
     }
   }
 
   if (filename == "") {
-    fprintf(stderr, "Usage - %s [-t] <file>\n", argv[0]);
+    showUsage();
     exit(1);
   }
 
@@ -276,34 +295,20 @@ checkPattern(const std::string &str) const
       return false;
 
     if (matchWord_) {
-      int pl = p - 1;
-
-      if (pl > 0 && isalnum(str[pl]))
-        return false;
-
-      int pr = p + pattern().size();
-
-      if (str[pr] != '\0' && isalnum(str[pr]))
+      if (! isWord(str, p, pattern().size()))
         return false;
     }
   }
   else {
     std::string lstr = toLower(str);
 
-    auto p = lstr.find(pattern());
+    auto p = lstr.find(lpattern());
 
     if (p == std::string::npos)
       return false;
 
     if (matchWord_) {
-      int pl = p - 1;
-
-      if (pl > 0 && isalnum(lstr[pl]))
-        return false;
-
-      int pr = p + pattern().size();
-
-      if (lstr[pr] != '\0' && isalnum(lstr[pr]))
+      if (! isWord(lstr, p, lpattern().size()))
         return false;
     }
   }
@@ -352,4 +357,23 @@ toLower(const std::string &str) const
     lstr[i] = tolower(lstr[i]);
 
   return lstr;
+}
+
+bool
+CConcatFind::
+isWord(const std::string &str, int p, int len) const
+{
+  // word characters [A-Z],[a-z],[0-9]_
+
+  int pl = p - 1;
+
+  if (pl > 0 && isalnum(str[pl]) || str[pl] == '_')
+    return false;
+
+  int pr = p + len;
+
+  if (str[pr] != '\0' && isalnum(str[pr]) || str[pr] == '_')
+    return false;
+
+  return true;
 }

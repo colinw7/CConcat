@@ -56,6 +56,10 @@ class CConcatFind : public CConcatBase {
 
   std::string toLower(const std::string &str) const;
 
+  const std::string &lpattern() const { return lpattern_; }
+
+  bool isWord(const std::string &str, int pos, int len) const;
+
  private:
   std::string pattern_;
   CGlob       glob_;
