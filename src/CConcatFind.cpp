@@ -342,6 +342,9 @@ void
 CConcatFind::
 addLineChar(char c)
 {
+  if (c == '\n')
+    c = ' ';
+
   line_ += c;
 }
 
