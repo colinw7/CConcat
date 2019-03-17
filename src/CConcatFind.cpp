@@ -57,6 +57,7 @@ main(int argc, char **argv)
   CConcatFind::Strings extensions;
 
   bool list      = false;
+  bool showFile  = true;
   bool number    = false;
   bool nocase    = false;
   bool matchFile = false;
@@ -73,6 +74,10 @@ main(int argc, char **argv)
       else if (strcmp(&argv[i][1], "nocomment") == 0 ||
                strcmp(&argv[i][1], "no_comment") == 0) {
         nocomment = true;
+      }
+      else if (strcmp(&argv[i][1], "nofile") == 0 ||
+               strcmp(&argv[i][1], "no_file") == 0) {
+        showFile = false;
       }
       else if (argv[i][1] == 'L' || argv[i][1] == 'l')
         list = true;
@@ -148,6 +153,7 @@ main(int argc, char **argv)
   find.setFilename  (filename);
   find.setPattern   (pattern);
   find.setList      (list);
+  find.setShowFile  (showFile);
   find.setNumber    (number);
   find.setExtensions(extensions);
   find.setMatchFile (matchFile);
@@ -363,10 +369,13 @@ checkLine(const std::string &line) const
     return false;
 
   if (! isList()) {
+    if (isShowFile())
+      std::cout << root() << currentFile() << ":";
+
     if (isNumber())
-      std::cout << root() << currentFile() << ":" << currentLine() << ": " << line << std::endl;
+      std::cout << currentLine() << ": " << line << std::endl;
     else
-      std::cout << root() << currentFile() << ": " << line << std::endl;
+      std::cout << line << std::endl;
   }
 
   return true;

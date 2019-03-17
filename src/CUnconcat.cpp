@@ -9,6 +9,8 @@ main(int argc, char **argv)
 {
   std::string filename;
   bool        tabulate = false;
+  bool        count    = false;
+  int         fileNum  = -1;
 
   for (int i = 1; i < argc; i++) {
     if (argv[i][0] == '-') {
@@ -16,12 +18,22 @@ main(int argc, char **argv)
         filename = "--";
       else if (argv[i][1] == 't')
         tabulate = true;
+      else if (argv[i][1] == 'C')
+        count = true;
+      else if (argv[i][1] == 'N') {
+        ++i;
+
+        if (i < argc)
+          fileNum = atoi(argv[i]);
+        else
+          std::cerr << "Missing value for " << argv[i - 1] << "\n";
+      }
       else
-        std::cerr << "Invalid option " << argv[i] << std::endl;
+        std::cerr << "Invalid option " << argv[i] << "\n";
     }
     else {
       if (filename != "") {
-        std::cerr << "Usage - " << argv[0] << " <file>" << std::endl;
+        std::cerr << "Usage - " << argv[0] << " <file>\n";
         exit(1);
       }
 
@@ -30,20 +42,24 @@ main(int argc, char **argv)
   }
 
   if (filename == "") {
-    fprintf(stderr, "Usage - %s [-t] <file>\n", argv[0]);
+    fprintf(stderr, "Usage - %s [-t] [-C] [-N <n>] <file>\n", argv[0]);
     exit(1);
   }
 
   CUnconcat unconcat;
 
   unconcat.setFilename(filename);
+  unconcat.setFileNum (fileNum);
   unconcat.setTabulate(tabulate);
+  unconcat.setCount   (count);
 
   if (! unconcat.exec())
     exit(1);
 
   return 0;
 }
+
+//------
 
 CUnconcat::
 CUnconcat()
@@ -62,33 +78,42 @@ exec()
     fp = fopen(filename_.c_str(), "rb");
 
     if (! fp) {
-      std::cerr << "Can't Open Input File " << filename() << std::endl;
+      std::cerr << "Can't Open Input File " << filename() << "\n";
       return false;
     }
   }
 
+  // read concat id line and id
   char buffer[256];
 
   int no = fread(buffer, 1, 10, fp);
 
   if (no != 10 || strncmp(buffer, "CONCAT_ID=", 10) != 0) {
-    std::cerr << "Invalid Concat File " << filename() << std::endl;
+    std::cerr << "Invalid Concat File " << filename() << "\n";
     exit(1);
   }
 
   if (! readId(fp))
     exit(1);
 
+  //---
+
+  // read concat id from filename line
   uint len = id_.size();
 
   no = fread(buffer, 1, len, fp);
 
   if (no != len || strncmp(buffer, id_.c_str(), len) != 0) {
-    std::cerr << "Invalid Concat File " << filename() << std::endl;
+    std::cerr << "Invalid Concat File " << filename() << "\n";
     exit(1);
   }
 
+  //---
+
+  int numFiles = 0;
+
   while (true) {
+    // read filename
     std::string output_file;
 
     int c = fgetc(fp);
@@ -100,48 +125,83 @@ exec()
     }
 
     if (c == EOF) {
-      std::cerr << "Invalid Concat File " << filename() << std::endl;
+      std::cerr << "Invalid Concat File " << filename() << "\n";
       exit(1);
     }
+
+    //---
 
     bytesWritten_ = 0;
 
     FILE *fp1 = 0;
 
-    if (isTabulate())
+    // output filename
+    if      (isTabulate()) {
       std::cout << output_file;
+    }
+    // increment file count
+    else if (isCount()) {
+      ++numFiles;
+    }
     else {
-      if (filename() == output_file) {
-        std::cerr << "Input and Output File are the same" << std::endl;
-        exit(1);
+      bool output = true;
+
+      if (fileNum() > 0) {
+        ++numFiles;
+
+        output = (fileNum() == numFiles);
       }
 
-      fp1 = fopen(output_file.c_str(), "w");
+      //---
 
-      if (fp1 == 0) {
-        std::cerr << "Can't Open Output File " << output_file << std::endl;
-        exit(1);
+      // open output file if needed
+      if (output) {
+        if (filename() == output_file) {
+          std::cerr << "Input and Output File are the same\n";
+          exit(1);
+        }
+
+        fp1 = fopen(output_file.c_str(), "w");
+
+        if (! fp1) {
+          std::cerr << "Can't Open Output File " << output_file << "\n";
+          exit(1);
+        }
       }
     }
 
+    // read to end of file (new id/filename line)
     while ((c = fgetc(fp)) != EOF)
       if (check_match(fp1, c))
         break;
 
     check_match(fp1, EOF);
 
-    if (fp1 != 0)
+    // close file
+    if (fp1)
       fclose(fp1);
 
+    //---
+
+    // output number of bytes in file for tabulate
     if (isTabulate())
-      std::cout << " " << bytesWritten_ << " bytes" << std::endl;
+      std::cout << " " << bytesWritten_ << " bytes\n";
+
+    //---
 
     if (c == EOF)
       break;
   }
 
+  // close input file
   if (fp != stdin)
     fclose(fp);
+
+  //---
+
+  // output file count
+  if (isCount())
+    std::cout << numFiles << "\n";
 
   return true;
 }

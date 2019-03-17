@@ -21,6 +21,9 @@ class CConcatFind : public CConcatBase {
   bool isList() const { return list_; }
   void setList(bool b) { list_ = b; }
 
+  bool isShowFile() const { return showFile_; }
+  void setShowFile(bool b) { showFile_ = b; }
+
   bool isNumber() const { return number_; }
   void setNumber(bool b) { number_ = b; }
 
@@ -77,6 +80,7 @@ class CConcatFind : public CConcatBase {
   std::string    pattern_;
   CGlob          glob_;
   bool           list_          { false };
+  bool           showFile_      { true };
   bool           number_        { false };
   bool           noCase_        { false };
   Strings        extensions_;
