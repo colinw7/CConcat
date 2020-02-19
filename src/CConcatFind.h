@@ -36,6 +36,9 @@ class CConcatFind : public CConcatBase {
   bool isMatchFile() const { return matchFile_; }
   void setMatchFile(bool b) { matchFile_ = b; }
 
+  bool isMatchDir() const { return matchDir_; }
+  void setMatchDir(bool b) { matchDir_ = b; }
+
   bool isMatchWord() const { return matchWord_; }
   void setMatchWord(bool b) { matchWord_ = b; }
 
@@ -70,6 +73,8 @@ class CConcatFind : public CConcatBase {
 
   bool checkPattern(const std::string &s) const;
 
+  std::string getDirName() const;
+
   std::string toLower(const std::string &str) const;
 
   const std::string &lpattern() const { return lpattern_; }
@@ -85,6 +90,7 @@ class CConcatFind : public CConcatBase {
   bool           noCase_        { false };
   Strings        extensions_;
   bool           matchFile_     { false };
+  bool           matchDir_      { false };
   bool           matchWord_     { false };
   bool           isGlob_        { false };
   bool           comment_       { false };

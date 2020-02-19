@@ -43,6 +43,7 @@ main(int argc, char **argv)
     std::cerr << "    -i         : no case matching\n";
     std::cerr << "    -e <exts>  : only match files with specified extensions\n";
     std::cerr << "    -f         : match only filename\n";
+    std::cerr << "    -d         : match only directory\n";
     std::cerr << "    -R <root>  : root directory of file\n";
     std::cerr << "    -g         : glob match\n";
     std::cerr << "    -w         : word match\n";
@@ -61,6 +62,7 @@ main(int argc, char **argv)
   bool number    = false;
   bool nocase    = false;
   bool matchFile = false;
+  bool matchDir  = false;
   bool matchWord = false;
   bool comment   = false;
   bool nocomment = false;
@@ -111,6 +113,9 @@ main(int argc, char **argv)
       else if (argv[i][1] == 'f') {
         matchFile = true;
       }
+      else if (argv[i][1] == 'd') {
+        matchDir = true;
+      }
       else if (argv[i][1] == 'R') {
         ++i;
 
@@ -157,6 +162,7 @@ main(int argc, char **argv)
   find.setNumber    (number);
   find.setExtensions(extensions);
   find.setMatchFile (matchFile);
+  find.setMatchDir  (matchDir);
   find.setMatchWord (matchWord);
   find.setGlob      (glob);
   find.setRoot      (root);
@@ -288,7 +294,11 @@ exec()
 
     if (isMatchFile()) {
       if (checkPattern(currentFile())) {
-        std::cout << root() << currentFile() << std::endl;
+        if (! isMatchDir())
+          std::cout << root() << currentFile() << std::endl;
+        else
+          std::cout << root() << getDirName() << std::endl;
+
         found = true;
       }
 
@@ -313,7 +323,11 @@ exec()
           bool found1 = checkLine(line_);
 
           if (isList() && found1) {
-            std::cout << root() << currentFile() << std::endl;
+            if (! isMatchDir())
+              std::cout << root() << currentFile() << std::endl;
+            else
+              std::cout << root() << getDirName() << std::endl;
+
             found = true;
           }
         }
@@ -342,6 +356,20 @@ exec()
   fclose(fp_);
 
   return true;
+}
+
+std::string
+CConcatFind::
+getDirName() const
+{
+  auto filename = currentFile();
+
+  auto p = filename.rfind('/');
+
+  if (p != std::string::npos)
+    return filename.substr(0, p);
+
+  return filename;
 }
 
 void
