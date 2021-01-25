@@ -57,37 +57,38 @@ main(int argc, char **argv)
   std::string          root;
   CConcatFind::Strings extensions;
 
-  bool list      = false;
-  bool showFile  = true;
-  bool number    = false;
-  bool nocase    = false;
-  bool matchFile = false;
-  bool matchDir  = false;
-  bool matchWord = false;
-  bool comment   = false;
-  bool nocomment = false;
-  bool glob      = false;
+  bool list       = false;
+  bool showFile   = true;
+  bool number     = false;
+  bool nocase     = false;
+  bool matchFile  = false;
+  bool matchDir   = false;
+  bool matchWord  = false;
+  bool comment    = false;
+  bool nocomment  = false;
+  bool glob       = false;
+  bool parse_args = true;
 
   for (int i = 1; i < argc; i++) {
-    if (argv[i][0] == '-') {
-      if      (strcmp(&argv[i][1], "comment") == 0) {
+    if (parse_args && argv[i][0] == '-') {
+      std::string arg = &argv[i][1];
+
+      if      (arg == "comment") {
         comment = true;
       }
-      else if (strcmp(&argv[i][1], "nocomment") == 0 ||
-               strcmp(&argv[i][1], "no_comment") == 0) {
+      else if (arg == "nocomment" || arg == "no_comment") {
         nocomment = true;
       }
-      else if (strcmp(&argv[i][1], "nofile") == 0 ||
-               strcmp(&argv[i][1], "no_file") == 0) {
+      else if (arg == "nofile" || arg == "no_file") {
         showFile = false;
       }
-      else if (argv[i][1] == 'L' || argv[i][1] == 'l')
+      else if (arg == "L" || arg == "l")
         list = true;
-      else if (argv[i][1] == 'n')
+      else if (arg == "n")
         number = true;
-      else if (argv[i][1] == 'i')
+      else if (arg == "i")
         nocase = true;
-      else if (argv[i][1] == 'e') {
+      else if (arg == "e") {
         ++i;
 
         if (i < argc) {
@@ -110,27 +111,30 @@ main(int argc, char **argv)
             extensions.push_back(ext);
         }
       }
-      else if (argv[i][1] == 'f') {
+      else if (arg == "f") {
         matchFile = true;
       }
-      else if (argv[i][1] == 'd') {
+      else if (arg == "d") {
         matchDir = true;
       }
-      else if (argv[i][1] == 'R') {
+      else if (arg == "R") {
         ++i;
 
         if (i < argc)
           root = std::string(argv[i]) + "/";
       }
-      else if (argv[i][1] == 'g') {
+      else if (arg == "g") {
         glob = true;
       }
-      else if (argv[i][1] == 'w') {
+      else if (arg == "w") {
         matchWord = true;
       }
-      else if (argv[i][1] == 'h' || strcmp(&argv[i][1], "-help") == 0) {
+      else if (arg == "h" || arg == "-help") {
         showUsage();
         exit(0);
+      }
+      else if (arg == "-") {
+        parse_args = false;
       }
       else
         std::cerr << "Invalid option " << argv[i] << std::endl;
