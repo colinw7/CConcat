@@ -3,6 +3,7 @@
 
 #include <CConcatBase.h>
 #include <CGlob.h>
+#include <CRegExp.h>
 #include <vector>
 
 class CommentParser;
@@ -48,6 +49,9 @@ class CConcatFind : public CConcatBase {
   bool isGlob() const { return isGlob_; }
   void setGlob(bool b) { isGlob_ = b; }
 
+  bool isRegExp() const { return isRegExp_; }
+  void setRegExp(bool b) { isRegExp_ = b; }
+
   bool isComment() const { return comment_; }
   void setComment(bool b) { comment_ = b; }
 
@@ -84,6 +88,7 @@ class CConcatFind : public CConcatBase {
  private:
   std::string    pattern_;
   CGlob          glob_;
+  CRegExp        regexp_;
   bool           list_          { false };
   bool           showFile_      { true };
   bool           number_        { false };
@@ -93,6 +98,7 @@ class CConcatFind : public CConcatBase {
   bool           matchDir_      { false };
   bool           matchWord_     { false };
   bool           isGlob_        { false };
+  bool           isRegExp_      { false };
   bool           comment_       { false };
   bool           noComment_     { false };
   std::string    root_;

@@ -36,15 +36,18 @@ $(CDEBUG) \
 -I$(INC_DIR) \
 -I. \
 -I../../CGlob/include \
+-I../../CRegExp/include \
 -I../../CComment/include
 
 LFLAGS = \
 $(LDEBUG) \
 -L$(LIB_DIR) \
 -L../../CGlob/lib \
--L../../CComment/lib
+-L../../CRegExp/lib \
+-L../../CComment/lib \
+-L../../CStrUtil/lib \
 
-LIBS = -lCGlob -lCComment
+LIBS = -lCGlob -lCRegExp -lCComment -lCStrUtil -ltre
 
 $(OBJ1): $(OBJ_DIR)/%.o: %.cpp
 	@echo "Compiling $<"

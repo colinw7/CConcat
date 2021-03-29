@@ -1,0 +1,2 @@
+. regexp match
+. multiple patterns (| separated)

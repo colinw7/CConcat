@@ -36,7 +36,7 @@ main(int argc, char **argv)
 {
   auto showUsage = []() {
     std::cerr << "Usage:";
-    std::cerr << "  CConcatFind [-l|L] [-n] [-i] [-e] [-f] [-R] [-g][ -w] <file> <pattern>\n";
+    std::cerr << "  CConcatFind [-l|L] [-n] [-i] [-e] [-f] [-R] [-g] [-w] <file> <pattern>\n";
     std::cerr << "\n";
     std::cerr << "    -l|L       : list files containing pattern\n";
     std::cerr << "    -n         : show line number\n";
@@ -46,6 +46,7 @@ main(int argc, char **argv)
     std::cerr << "    -d         : match only directory\n";
     std::cerr << "    -R <root>  : root directory of file\n";
     std::cerr << "    -g         : glob match\n";
+    std::cerr << "    -x         : regexp match\n";
     std::cerr << "    -w         : word match\n";
     std::cerr << "    -comment   : match comments only\n";
     std::cerr << "    -nocomment : match no comments only\n";
@@ -67,6 +68,7 @@ main(int argc, char **argv)
   bool comment    = false;
   bool nocomment  = false;
   bool glob       = false;
+  bool regexp     = false;
   bool parse_args = true;
 
   for (int i = 1; i < argc; i++) {
@@ -126,6 +128,9 @@ main(int argc, char **argv)
       else if (arg == "g") {
         glob = true;
       }
+      else if (arg == "x") {
+        regexp = true;
+      }
       else if (arg == "w") {
         matchWord = true;
       }
@@ -169,6 +174,7 @@ main(int argc, char **argv)
   find.setMatchDir  (matchDir);
   find.setMatchWord (matchWord);
   find.setGlob      (glob);
+  find.setRegExp    (regexp);
   find.setRoot      (root);
   find.setComment   (comment);
   find.setNoComment (nocomment);
@@ -196,6 +202,7 @@ setPattern(const std::string &s)
 {
   pattern_ = s;
   glob_    = CGlob("*" + pattern_ + "*");
+  regexp_  = CRegExp(".*" + pattern_ + ".*");
 
   if (isNoCase())
     lpattern_ = toLower(pattern_);
@@ -419,6 +426,9 @@ checkPattern(const std::string &str) const
 {
   if (isGlob())
     return glob_.compare(str);
+
+  if (isRegExp())
+    return regexp_.find(str);
 
   if (! isNoCase()) {
     auto p = str.find(pattern());
