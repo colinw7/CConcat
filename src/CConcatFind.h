@@ -16,8 +16,29 @@ class CConcatFind : public CConcatBase {
   CConcatFind();
  ~CConcatFind();
 
-  const std::string &pattern() const { return pattern_; }
+  //---
+
+  const std::string &filePattern() const { return filePattern_.str; }
+  void setFilePattern(const std::string &s);
+
+  //---
+
+  const std::string &pattern() const { return pattern_.str; }
   void setPattern(const std::string &s);
+
+  bool isGlob() const { return pattern_.isGlob; }
+  void setGlob(bool b) { pattern_.isGlob = b; }
+
+  bool isRegExp() const { return pattern_.isRegExp; }
+  void setRegExp(bool b) { pattern_.isRegExp = b; }
+
+  bool isNoCase() const { return pattern_.noCase; }
+  void setNoCase(bool b) { pattern_.noCase = b; }
+
+  bool isMatchWord() const { return pattern_.matchWord; }
+  void setMatchWord(bool b) { pattern_.matchWord = b; }
+
+  //---
 
   bool isList() const { return list_; }
   void setList(bool b) { list_ = b; }
@@ -28,9 +49,6 @@ class CConcatFind : public CConcatBase {
   bool isNumber() const { return number_; }
   void setNumber(bool b) { number_ = b; }
 
-  bool isNoCase() const { return noCase_; }
-  void setNoCase(bool b) { noCase_ = b; }
-
   const Strings &extensions() const { return extensions_; }
   void setExtensions(const Strings &s) { extensions_ = s; }
 
@@ -40,17 +58,8 @@ class CConcatFind : public CConcatBase {
   bool isMatchDir() const { return matchDir_; }
   void setMatchDir(bool b) { matchDir_ = b; }
 
-  bool isMatchWord() const { return matchWord_; }
-  void setMatchWord(bool b) { matchWord_ = b; }
-
   const std::string &root() const { return root_; }
   void setRoot(const std::string &s) { root_ = s; }
-
-  bool isGlob() const { return isGlob_; }
-  void setGlob(bool b) { isGlob_ = b; }
-
-  bool isRegExp() const { return isRegExp_; }
-  void setRegExp(bool b) { isRegExp_ = b; }
 
   bool isComment() const { return comment_; }
   void setComment(bool b) { comment_ = b; }
@@ -77,28 +86,39 @@ class CConcatFind : public CConcatBase {
 
   bool checkPattern(const std::string &s) const;
 
+  bool checkFilePattern(const std::string &s) const;
+
   std::string getDirName() const;
 
-  std::string toLower(const std::string &str) const;
-
-  const std::string &lpattern() const { return lpattern_; }
-
-  bool isWord(const std::string &str, int pos, int len) const;
+  const std::string &lpattern() const { return pattern_.lstr; }
 
  private:
-  std::string    pattern_;
-  CGlob          glob_;
-  CRegExp        regexp_;
+  struct PatternData {
+    std::string str;
+    CGlob       glob;
+    CRegExp     regexp;
+    std::string lstr;
+    bool        isGlob    { false };
+    bool        isRegExp  { false };
+    bool        noCase    { false };
+    bool        matchWord { false };
+  };
+
+  static bool checkPatternData(const std::string &str, const PatternData &data);
+
+  static bool isWord(const std::string &str, int pos, int len);
+
+  static std::string toLower(const std::string &str);
+
+ private:
+  PatternData    filePattern_;
+  PatternData    pattern_;
   bool           list_          { false };
   bool           showFile_      { true };
   bool           number_        { false };
-  bool           noCase_        { false };
   Strings        extensions_;
   bool           matchFile_     { false };
   bool           matchDir_      { false };
-  bool           matchWord_     { false };
-  bool           isGlob_        { false };
-  bool           isRegExp_      { false };
   bool           comment_       { false };
   bool           noComment_     { false };
   std::string    root_;
@@ -106,7 +126,6 @@ class CConcatFind : public CConcatBase {
   std::string    checkBuffer_;
   std::string    currentFile_;
   int            currentLine_   { 1 };
-  std::string    lpattern_;
   CommentParser* commentParser_ { nullptr };
   FILE*          fp_            { nullptr };
   std::string    line_;

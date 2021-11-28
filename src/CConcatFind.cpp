@@ -38,37 +38,41 @@ main(int argc, char **argv)
     std::cerr << "Usage:";
     std::cerr << "  CConcatFind [-l|L] [-n] [-i] [-e] [-f] [-R] [-g] [-w] <file> <pattern>\n";
     std::cerr << "\n";
-    std::cerr << "    -l|L       : list files containing pattern\n";
-    std::cerr << "    -n         : show line number\n";
-    std::cerr << "    -i         : no case matching\n";
-    std::cerr << "    -e <exts>  : only match files with specified extensions\n";
-    std::cerr << "    -f         : match only filename\n";
-    std::cerr << "    -d         : match only directory\n";
-    std::cerr << "    -R <root>  : root directory of file\n";
-    std::cerr << "    -g         : glob match\n";
-    std::cerr << "    -x         : regexp match\n";
-    std::cerr << "    -w         : word match\n";
-    std::cerr << "    -comment   : match comments only\n";
-    std::cerr << "    -nocomment : match no comments only\n";
-    std::cerr << "    -h|--help  : help for usage\n";
+    std::cerr << "    -l|L          : list files containing pattern\n";
+    std::cerr << "    -n            : show line number\n";
+    std::cerr << "    -i            : no case matching\n";
+    std::cerr << "    -e <exts>     : only match files with specified extensions\n";
+    std::cerr << "    -f            : match only filename\n";
+    std::cerr << "    -fp <pattern> : file pattern\n";
+    std::cerr << "    -d            : match only directory\n";
+    std::cerr << "    -R <root>     : root directory of file\n";
+    std::cerr << "    -g            : glob match\n";
+    std::cerr << "    -x            : regexp match\n";
+    std::cerr << "    -w            : word match\n";
+    std::cerr << "    -comment      : match comments only\n";
+    std::cerr << "    -nocomment    : match no comments only\n";
+    std::cerr << "    -h|--help     : help for usage\n";
   };
 
-  std::string          filename;
-  std::string          pattern;
+  std::string  filename;
+  std::string  filePattern;
+
+  std::string pattern;
+  bool        glob      = false;
+  bool        regexp    = false;
+  bool        nocase    = false;
+  bool        matchWord = false;
+
   std::string          root;
   CConcatFind::Strings extensions;
 
   bool list       = false;
   bool showFile   = true;
   bool number     = false;
-  bool nocase     = false;
   bool matchFile  = false;
   bool matchDir   = false;
-  bool matchWord  = false;
   bool comment    = false;
   bool nocomment  = false;
-  bool glob       = false;
-  bool regexp     = false;
   bool parse_args = true;
 
   for (int i = 1; i < argc; i++) {
@@ -116,6 +120,13 @@ main(int argc, char **argv)
       else if (arg == "f") {
         matchFile = true;
       }
+      else if (arg == "fp") {
+        ++i;
+
+        if (i < argc) {
+          filePattern = argv[i];
+        }
+      }
       else if (arg == "d") {
         matchDir = true;
       }
@@ -141,8 +152,10 @@ main(int argc, char **argv)
       else if (arg == "-") {
         parse_args = false;
       }
-      else
+      else {
         std::cerr << "Invalid option " << argv[i] << std::endl;
+        exit(1);
+      }
     }
     else {
       if      (filename == "")
@@ -163,21 +176,25 @@ main(int argc, char **argv)
 
   CConcatFind find;
 
-  find.setNoCase    (nocase);
-  find.setFilename  (filename);
-  find.setPattern   (pattern);
-  find.setList      (list);
-  find.setShowFile  (showFile);
-  find.setNumber    (number);
-  find.setExtensions(extensions);
-  find.setMatchFile (matchFile);
-  find.setMatchDir  (matchDir);
-  find.setMatchWord (matchWord);
-  find.setGlob      (glob);
-  find.setRegExp    (regexp);
-  find.setRoot      (root);
-  find.setComment   (comment);
-  find.setNoComment (nocomment);
+  find.setFilename(filename);
+
+  find.setFilePattern(filePattern);
+
+  find.setPattern  (pattern);
+  find.setRegExp   (regexp);
+  find.setGlob     (glob);
+  find.setNoCase   (nocase);
+  find.setMatchWord(matchWord);
+
+  find.setList       (list);
+  find.setShowFile   (showFile);
+  find.setNumber     (number);
+  find.setExtensions (extensions);
+  find.setMatchFile  (matchFile);
+  find.setMatchDir   (matchDir);
+  find.setRoot       (root);
+  find.setComment    (comment);
+  find.setNoComment  (nocomment);
 
   if (! find.exec())
     exit(1);
@@ -198,16 +215,34 @@ CConcatFind::
 
 void
 CConcatFind::
+setFilePattern(const std::string &s)
+{
+  filePattern_.str = s;
+
+  if (filePattern_.str != "") {
+    filePattern_.glob    = CGlob("*" + filePattern_.str + "*");
+    filePattern_.regexp  = CRegExp(".*" + filePattern_.str + ".*");
+  }
+  else {
+    filePattern_.glob    = CGlob();
+    filePattern_.regexp  = CRegExp();
+  }
+
+  filePattern_.lstr = filePattern_.str;
+}
+
+void
+CConcatFind::
 setPattern(const std::string &s)
 {
-  pattern_ = s;
-  glob_    = CGlob("*" + pattern_ + "*");
-  regexp_  = CRegExp(".*" + pattern_ + ".*");
+  pattern_.str    = s;
+  pattern_.glob   = CGlob("*" + pattern_.str + "*");
+  pattern_.regexp = CRegExp(".*" + pattern_.str + ".*");
 
   if (isNoCase())
-    lpattern_ = toLower(pattern_);
+    pattern_.lstr = toLower(pattern_.str);
   else
-    lpattern_ = pattern_;
+    pattern_.lstr = pattern_.str;
 }
 
 bool
@@ -259,7 +294,6 @@ exec()
   // read file chars
   while (true) {
     // get file name
-
     setCurrentFile("");
 
     int c = getChar();
@@ -296,6 +330,14 @@ exec()
           break;
         }
       }
+    }
+
+    //---
+
+    // check file name match
+    if (filePattern_.str != "") {
+      if (! checkFilePattern(currentFile()))
+        skip = true;
     }
 
     //---
@@ -424,33 +466,47 @@ bool
 CConcatFind::
 checkPattern(const std::string &str) const
 {
-  if (isGlob())
-    return glob_.compare(str);
+  return checkPatternData(str, pattern_);
+}
 
-  if (isRegExp())
-    return regexp_.find(str);
+bool
+CConcatFind::
+checkFilePattern(const std::string &str) const
+{
+  return checkPatternData(str, filePattern_);
+}
 
-  if (! isNoCase()) {
-    auto p = str.find(pattern());
+bool
+CConcatFind::
+checkPatternData(const std::string &str, const PatternData &data)
+{
+  if (data.isGlob)
+    return data.glob.compare(str);
+
+  if (data.isRegExp)
+    return data.regexp.find(str);
+
+  if (! data.noCase) {
+    auto p = str.find(data.str);
 
     if (p == std::string::npos)
       return false;
 
-    if (matchWord_) {
-      if (! isWord(str, p, pattern().size()))
+    if (data.matchWord) {
+      if (! isWord(str, p, data.str.size()))
         return false;
     }
   }
   else {
     std::string lstr = toLower(str);
 
-    auto p = lstr.find(lpattern());
+    auto p = lstr.find(data.lstr);
 
     if (p == std::string::npos)
       return false;
 
-    if (matchWord_) {
-      if (! isWord(lstr, p, lpattern().size()))
+    if (data.matchWord) {
+      if (! isWord(lstr, p, data.lstr.size()))
         return false;
     }
   }
@@ -491,7 +547,7 @@ checkMatch(int c)
 
 std::string
 CConcatFind::
-toLower(const std::string &str) const
+toLower(const std::string &str)
 {
   std::string lstr = str;
 
@@ -503,7 +559,7 @@ toLower(const std::string &str) const
 
 bool
 CConcatFind::
-isWord(const std::string &str, int p, int len) const
+isWord(const std::string &str, int p, int len)
 {
   // word characters [A-Z],[a-z],[0-9]_
 
