@@ -16,6 +16,7 @@ all: dirs $(BIN_DIR)/CConcat $(BIN_DIR)/CUnconcat $(BIN_DIR)/CConcatFind $(BIN_D
 
 dirs:
 	@if [ ! -e ../obj ]; then mkdir ../obj; fi
+	@if [ ! -e ../lib ]; then mkdir ../lib; fi
 	@if [ ! -e ../bin ]; then mkdir ../bin; fi
 
 SRC1 = CConcat.cpp
