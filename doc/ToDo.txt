@@ -1,3 +1,4 @@
 . regexp match
 . multiple patterns (| separated)
 . file patterns
+. context (language) search (in comment, in string)
