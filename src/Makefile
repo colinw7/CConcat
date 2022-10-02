@@ -33,7 +33,7 @@ OBJ5 = $(patsubst %.cpp,$(OBJ_DIR)/%.o,$(SRC5))
 
 CFLAGS = \
 $(CDEBUG) \
--std=c++14 \
+-std=c++17 \
 -I$(INC_DIR) \
 -I. \
 -I../../CGlob/include \
